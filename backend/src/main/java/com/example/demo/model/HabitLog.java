@@ -1,19 +1,19 @@
 package com.example.demo.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-@Document(collection = "habit_logs")
+@Entity
+@Table(name = "habit_logs")
 @Data
 @Builder
 @NoArgsConstructor
@@ -21,17 +21,28 @@ import java.util.List;
 public class HabitLog {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @Indexed
-    private String userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
+    private User user;
 
-    @Indexed
+    @Column(nullable = false)
     private LocalDate date;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "habit_completed_items", joinColumns = @JoinColumn(name = "habit_log_id"))
+    @Column(name = "habit_name")
     @Builder.Default
     private List<String> completedHabits = new ArrayList<>(); // e.g. ["sleep", "exercise", "water", "reading", "meditation", "screentime"]
 
+    @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();
+
+    public String getUserId() {
+        return user != null ? user.getId() : null;
+    }
 }

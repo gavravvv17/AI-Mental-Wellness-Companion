@@ -1,0 +1,120 @@
+# =============================================================
+# Serenity AI — Root .gitignore
+# Covers: React (Vite) frontend + Spring Boot backend + PostgreSQL
+# =============================================================
+
+# ─── Environment & Secrets ───────────────────────────────────
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+frontend/.env
+frontend/.env.local
+frontend/.env.*
+
+# Backend secrets — never commit real properties files
+backend/src/main/resources/application-local.properties
+backend/src/main/resources/application-dev.properties
+backend/src/main/resources/application-prod.properties
+# Keep application.properties.example (safe template)
+!backend/src/main/resources/application.properties.example
+
+# ─── Frontend ────────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.cache/
+frontend/coverage/
+
+# ─── Backend / Maven ─────────────────────────────────────────
+backend/target/
+backend/*.class
+backend/*.log
+
+# Loose test/debug scripts in backend root (dev-time only)
+backend/DirectGeminiTest.java
+backend/DirectGeminiTest.class
+backend/DirectGeminiTest25.java
+backend/DirectGeminiTest25.class
+backend/DirectGeminiTest35.java
+backend/DirectGeminiTest35.class
+backend/ListGeminiOnly.java
+backend/ListGeminiOnly.class
+backend/ListGeminiOnlySimple.java
+backend/ListGeminiOnlySimple.class
+backend/ListModelsGemini.java
+backend/ListModelsGemini.class
+backend/TestChatGemini.java
+backend/TestChatGemini.class
+backend/TestDB.java
+backend/TestDB.class
+backend/TestDBDates.java
+backend/TestDBDates.class
+backend/TestDBNulls.java
+backend/TestDBNulls.class
+backend/TestGet.java
+backend/TestGet.class
+backend/TestLogin.java
+backend/TestLogin.class
+backend/TestOptions.java
+backend/TestOptions.class
+backend/TestPost.java
+backend/TestPost.class
+backend/TestRealToken.java
+backend/TestRealToken.class
+backend/TestRealToken8081.java
+backend/TestRealToken8081.class
+backend/TestRealTokenFixed.java
+backend/TestRealTokenFixed.class
+backend/TestRishy17.java
+backend/TestRishy17.class
+backend/TestRishy17_8081.java
+backend/TestRishy17_8081.class
+backend/TestRishy17_8081_NewCode.java
+backend/TestRishy17_8081_NewCode.class
+backend/TestSignup.java
+backend/TestSignup.class
+backend/TestTimelineWithData.java
+backend/TestTimelineWithData.class
+backend/auth-debug.log
+
+# ─── IDEs & Editors ──────────────────────────────────────────
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+.classpath
+.project
+.factorypath
+.settings/
+.springBeans
+.sts4-cache
+.apt_generated
+.nb-gradle/
+nbproject/private/
+
+# ─── OS Files ────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ─── Logs ────────────────────────────────────────────────────
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ─── Misc ────────────────────────────────────────────────────
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.local

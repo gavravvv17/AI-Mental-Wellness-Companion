@@ -1,6 +1,4 @@
 package com.example.demo.security;
-
-import com.example.demo.service.InMemoryDatabase;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,29 +38,12 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                 }
 
                 if (username != null) {
-                    UserDetails userDetails = null;
-                    if (!InMemoryDatabase.isDatabaseOffline) {
-                        try {
-                            userDetails = userDetailsService.loadUserByUsername(username);
-                        } catch (Exception e) {
-                            InMemoryDatabase.isDatabaseOffline = true;
-                            logger.warn("MongoDB connection timed out/failed. Switching to In-Memory store.");
-                        }
-                    }
-                    if (userDetails == null) {
-                        // Fallback to loading from InMemoryDatabase
-                        final String finalUsername = username;
-                        userDetails = InMemoryDatabase.users.stream()
-                                .filter(u -> u.getUsername().equals(finalUsername))
-                                .findFirst()
-                                .orElse(null);
-                    }
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
                     if (userDetails != null) {
                         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                                 userDetails, null, userDetails.getAuthorities());
                         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
                         SecurityContextHolder.getContext().setAuthentication(authentication);
                     }
                 }

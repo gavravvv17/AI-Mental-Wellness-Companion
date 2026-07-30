@@ -5,7 +5,6 @@ const API = axios.create({
   timeout: 15000,
 });
 
-// Attach JWT token to every request
 API.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -15,7 +14,6 @@ API.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Handle 401 → dispatch a custom event so AuthContext can react without circular imports
 API.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -28,7 +26,6 @@ API.interceptors.response.use(
       console.warn('[API] 401 – session expired. Clearing credentials.');
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      // Fire a DOM event; AuthContext listens for this and updates React state
       window.dispatchEvent(new CustomEvent('mindmate:session-expired'));
     }
 

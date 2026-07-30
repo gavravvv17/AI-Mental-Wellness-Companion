@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class TimelineService {
@@ -33,34 +32,12 @@ public class TimelineService {
     private HabitLogRepository habitLogRepository;
 
     public TimelineResponse getUserTimeline(String userId) {
-        List<MoodLog> moodLogs;
-        List<JournalEntry> journals;
-        List<LifeEvent> lifeEvents;
-        List<HabitLog> habitLogs;
+        List<MoodLog> moodLogs = moodLogRepository.findByUserId(userId);
+        List<JournalEntry> journals = journalEntryRepository.findByUserId(userId);
+        List<LifeEvent> lifeEvents = lifeEventRepository.findByUserId(userId);
+        List<HabitLog> habitLogs = habitLogRepository.findByUserId(userId);
 
-        try {
-            moodLogs = moodLogRepository.findByUserId(userId);
-            journals = journalEntryRepository.findByUserId(userId);
-            lifeEvents = lifeEventRepository.findByUserId(userId);
-            habitLogs = habitLogRepository.findByUserId(userId);
-        } catch (Exception e) {
-            // DB is down, fall back to in-memory lists
-            moodLogs = InMemoryDatabase.moodLogs.stream()
-                    .filter(m -> m.getUserId().equals(userId))
-                    .collect(Collectors.toList());
-            journals = InMemoryDatabase.journals.stream()
-                    .filter(j -> j.getUserId().equals(userId))
-                    .collect(Collectors.toList());
-            lifeEvents = InMemoryDatabase.lifeEvents.stream()
-                    .filter(le -> le.getUserId().equals(userId))
-                    .collect(Collectors.toList());
-            habitLogs = InMemoryDatabase.habitLogs.stream()
-                    .filter(h -> h.getUserId().equals(userId))
-                    .collect(Collectors.toList());
-        }
-
-        // Group everything by date
-        Map<LocalDate, TimelineItem> timelineMap = new TreeMap<>(Collections.reverseOrder()); // Descending order of dates
+        Map<LocalDate, TimelineItem> timelineMap = new TreeMap<>(Collections.reverseOrder());
 
         for (MoodLog mood : moodLogs) {
             TimelineItem item = timelineMap.computeIfAbsent(mood.getDate(), d -> TimelineItem.builder().date(d).build());
@@ -74,14 +51,16 @@ public class TimelineService {
 
         for (JournalEntry journal : journals) {
             TimelineItem item = timelineMap.computeIfAbsent(journal.getDate(), d -> TimelineItem.builder().date(d).build());
+            item.setJournalId(journal.getId());
             item.setJournalTitle(journal.getTitle());
             item.setJournalSummary(journal.getSummary());
             item.setJournalSentiment(journal.getSentimentScore());
-            item.setSafetyAlertTriggered(journal.isSafetyAlertTriggered());
+            item.setSafetyAlertTriggered(journal.getSafetyAlertTriggered());
         }
 
         for (LifeEvent event : lifeEvents) {
             TimelineItem item = timelineMap.computeIfAbsent(event.getDate(), d -> TimelineItem.builder().date(d).build());
+            item.setLifeEventId(event.getId());
             item.setLifeEventTitle(event.getTitle());
             item.setLifeEventDescription(event.getDescription());
         }
@@ -93,7 +72,6 @@ public class TimelineService {
 
         List<TimelineItem> sortedItems = new ArrayList<>(timelineMap.values());
 
-        // Generate Correlation Insights
         List<String> insights = generateInsights(sortedItems);
 
         return TimelineResponse.builder()
@@ -110,13 +88,11 @@ public class TimelineService {
             return insights;
         }
 
-        // 1. Calculate Average sleep on positive vs negative days
         double positiveSleepSum = 0;
         int positiveSleepCount = 0;
         double negativeSleepSum = 0;
         int negativeSleepCount = 0;
 
-        // 2. Calculate Average exercise on positive vs negative days
         double positiveExerciseSum = 0;
         int positiveExerciseCount = 0;
         double negativeExerciseSum = 0;
@@ -172,7 +148,6 @@ public class TimelineService {
             }
         }
 
-        // 3. Check for specific habit completeness correlation
         long totalDaysWithMeditation = items.stream()
                 .filter(i -> i.getCompletedHabits() != null && i.getCompletedHabits().contains("meditation"))
                 .count();
@@ -180,7 +155,6 @@ public class TimelineService {
             insights.add(String.format("🧘 Mindfulness habit: You completed meditation on %d days. Keep it up to build emotional resilience!", totalDaysWithMeditation));
         }
 
-        // 4. Correlate journal sentiment
         double avgSentiment = items.stream()
                 .filter(i -> i.getJournalSentiment() != null)
                 .mapToDouble(TimelineItem::getJournalSentiment)

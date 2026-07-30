@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import API from '../services/api';
 import { Save, CheckCircle, Battery, Droplet, Moon, Dumbbell, FileText, Smile, Heart } from 'lucide-react';
+import CustomSlider from '../components/CustomSlider';
 
 const moods = [
   { name:'Happy',    emoji:'😄', desc:'Joyful & cheerful', color:'#fff4c7', border:'#ffe88a', dot:'#f59e0b' },
@@ -16,6 +17,22 @@ const emotionTags = [
   'excited','inspired','restless','irritable','overwhelmed',
   'peaceful','content','unfocused','tired','bored'
 ];
+
+const SectionCard = ({ step, title, icon: Icon, color, children }) => (
+  <div className="card p-6" style={{ borderRadius: '24px' }}>
+    <div className="flex items-center gap-2.5 mb-4">
+      <div className="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs text-white"
+        style={{ background: color }}>
+        {step}
+      </div>
+      <h3 className="font-bold text-ink-800 flex items-center gap-1.5">
+        <Icon className="w-4 h-4" style={{ color }} />
+        {title}
+      </h3>
+    </div>
+    {children}
+  </div>
+);
 
 const MoodTracker = ({ setCurrentTab }) => {
   const [mood, setMood] = useState('Calm');
@@ -77,21 +94,6 @@ const MoodTracker = ({ setCurrentTab }) => {
   };
   const energyInfo = getEnergyLabel(energyLevel);
 
-  const SectionCard = ({ step, title, icon: Icon, color, bg, children }) => (
-    <div className="card p-6" style={{ borderRadius: '24px' }}>
-      <div className="flex items-center gap-2.5 mb-4">
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs text-white"
-          style={{ background: color }}>
-          {step}
-        </div>
-        <h3 className="font-bold text-ink-800 flex items-center gap-1.5">
-          <Icon className="w-4 h-4" style={{ color }} />
-          {title}
-        </h3>
-      </div>
-      {children}
-    </div>
-  );
 
   return (
     <div className="max-w-2xl mx-auto space-y-5 page-in">
@@ -110,7 +112,6 @@ const MoodTracker = ({ setCurrentTab }) => {
 
       <form onSubmit={handleSave} className="space-y-4">
 
-        {/* Mood */}
         <SectionCard step="1" title="How do you feel?" icon={Smile} color="#8b5cf6" bg="#f5f0ff">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {moods.map(m => {
@@ -131,7 +132,6 @@ const MoodTracker = ({ setCurrentTab }) => {
           </div>
         </SectionCard>
 
-        {/* Energy */}
         <SectionCard step="2" title="Energy Level" icon={Battery} color="#f97316" bg="#fff9f6">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -141,13 +141,20 @@ const MoodTracker = ({ setCurrentTab }) => {
                 <span className="text-xs text-ink-400">/10</span>
               </div>
             </div>
-            <input type="range" min="1" max="10" value={energyLevel} onChange={e => setEnergyLevel(parseInt(e.target.value))}
-              className="w-full"
-              style={{
-                color: energyInfo.c,
-                background: `linear-gradient(to right, ${energyInfo.c} 0%, ${energyInfo.c} ${((energyLevel - 1) / 9) * 100}%, #E2E6ED ${((energyLevel - 1) / 9) * 100}%, #E2E6ED 100%)`
-              }} />
-            <div className="flex justify-between text-[10px] items-center">
+            <div className="pt-1 pb-1">
+              <CustomSlider
+                id="energy-slider"
+                label="Energy Level"
+                min={0}
+                max={10}
+                step={1}
+                value={energyLevel}
+                onChange={(v) => setEnergyLevel(v)}
+                color={energyInfo.c}
+                showTicks={true}
+              />
+            </div>
+            <div className="flex justify-between text-[10px] items-center mt-0">
               <span className="text-ink-400">Depleted</span>
               <span className="font-bold px-2.5 py-0.5 rounded-full text-white text-xs"
                 style={{ background: energyInfo.c }}>{energyInfo.l}</span>
@@ -156,7 +163,6 @@ const MoodTracker = ({ setCurrentTab }) => {
           </div>
         </SectionCard>
 
-        {/* Emotions */}
         <SectionCard step="3" title="Detailed Emotions" icon={Heart} color="#ec4899" bg="#fff5f5">
           <p className="text-xs text-ink-400 mb-3">Select all that resonate with you</p>
           <div className="flex flex-wrap gap-2">
@@ -178,40 +184,39 @@ const MoodTracker = ({ setCurrentTab }) => {
           )}
         </SectionCard>
 
-        {/* Lifestyle */}
         <SectionCard step="4" title="Lifestyle Metrics" icon={Battery} color="#4caf50" bg="#f0faf0">
           <p className="text-xs text-ink-400 mb-4">Helps discover mood patterns over time</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
-              { label:'Sleep', icon:Moon,     color:'#8b5cf6', val:sleepHours,     set:setSleepHours,     min:0, max:16,  step:0.5, unit:'hrs' },
-              { label:'Exercise', icon:Dumbbell, color:'#4caf50', val:exerciseMinutes, set:setExerciseMinutes, min:0, max:180, step:5,   unit:'min' },
-              { label:'Water', icon:Droplet,  color:'#0ea5e9', val:waterIntakeMl,  set:setWaterIntakeMl,  min:0, max:4000,step:250, unit:'ml'  },
-            ].map(({ label, icon:Icon, color, val, set, min, max, step, unit }) => {
-              const fillPercent = ((val - min) / (max - min)) * 100;
-              return (
-                <div key={label} className="p-4 rounded-2xl border-2 space-y-2.5"
-                  style={{ background: '#F7F9FC', borderColor: '#E2E6ED' }}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <Icon className="w-4 h-4" style={{ color }} />
-                      <span className="text-xs font-bold text-ink-700">{label}</span>
-                    </div>
-                    <span className="text-xs font-bold" style={{ color }}>{val} {unit}</span>
+              { label:'Sleep',    icon:Moon,     color:'#8b5cf6', val:sleepHours,      set:setSleepHours,     min:0, max:16,   step:0.5, unit:'hrs', parse: parseFloat },
+              { label:'Exercise', icon:Dumbbell, color:'#4caf50', val:exerciseMinutes, set:setExerciseMinutes, min:0, max:180,  step:5,   unit:'min', parse: parseInt  },
+              { label:'Water',    icon:Droplet,  color:'#0ea5e9', val:waterIntakeMl,   set:setWaterIntakeMl,  min:0, max:4000, step:250, unit:'ml',  parse: parseInt  },
+            ].map(({ label, icon:Icon, color, val, set, min, max, step, unit, parse }) => (
+              <div key={label} className="p-4 rounded-2xl border-2 space-y-2.5"
+                style={{ background: '#F7F9FC', borderColor: '#E2E6ED' }}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Icon className="w-4 h-4" style={{ color }} />
+                    <span className="text-xs font-bold text-ink-700">{label}</span>
                   </div>
-                  <input type="range" min={min} max={max} step={step} value={val}
-                    onChange={e => set(label==='Sleep'?parseFloat(e.target.value):parseInt(e.target.value))}
-                    className="w-full"
-                    style={{
-                      color: color,
-                      background: `linear-gradient(to right, ${color} 0%, ${color} ${fillPercent}%, #E2E6ED ${fillPercent}%, #E2E6ED 100%)`
-                    }} />
+                  <span className="text-xs font-bold" style={{ color }}>{val} {unit}</span>
                 </div>
-              );
-            })}
+                <CustomSlider
+                  id={`lifestyle-${label.toLowerCase()}`}
+                  label={`${label} (${unit})`}
+                  min={min}
+                  max={max}
+                  step={step}
+                  value={val}
+                  onChange={(v) => set(parse(v))}
+                  color={color}
+                  showTicks={false}
+                />
+              </div>
+            ))}
           </div>
         </SectionCard>
 
-        {/* Notes */}
         <SectionCard step="5" title="Reflection Notes" icon={FileText} color="#d97706" bg="#fffef0">
           <p className="text-xs text-ink-400 mb-3">Optional — any triggers or observations?</p>
           <textarea value={note} onChange={e => setNote(e.target.value)}

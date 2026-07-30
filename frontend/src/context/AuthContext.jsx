@@ -14,7 +14,6 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   }, []);
 
-  // Listen for the session-expired event fired by api.js on 401
   useEffect(() => {
     const handleExpired = () => {
       setSessionExpired(true);
@@ -24,7 +23,6 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener('mindmate:session-expired', handleExpired);
   }, [logout]);
 
-  // Restore session from localStorage on boot
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     const token = localStorage.getItem('token');

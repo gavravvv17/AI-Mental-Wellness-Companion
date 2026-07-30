@@ -3,7 +3,6 @@ package com.example.demo.controller;
 import com.example.demo.model.HabitLog;
 import com.example.demo.model.User;
 import com.example.demo.repository.HabitLogRepository;
-import com.example.demo.service.InMemoryDatabase;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -11,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/habits")
@@ -25,87 +23,36 @@ public class HabitController {
         User user = (User) authentication.getPrincipal();
         LocalDate logDate = date != null ? LocalDate.parse(date) : LocalDate.now();
 
-        if (!InMemoryDatabase.isDatabaseOffline) {
-            try {
-                Optional<HabitLog> existingLogOpt = habitLogRepository.findByUserIdAndDate(user.getId(), logDate);
-                HabitLog log;
-
-                if (existingLogOpt.isPresent()) {
-                    log = existingLogOpt.get();
-                    List<String> completed = log.getCompletedHabits();
-                    if (completed.contains(habitName)) {
-                        completed.remove(habitName); // Toggle off
-                    } else {
-                        completed.add(habitName); // Toggle on
-                    }
-                } else {
-                    List<String> completed = new ArrayList<>();
-                    completed.add(habitName);
-                    log = HabitLog.builder()
-                            .userId(user.getId())
-                            .date(logDate)
-                            .completedHabits(completed)
-                            .build();
-                }
-
-                HabitLog savedLog = habitLogRepository.save(log);
-                return ResponseEntity.ok(savedLog);
-            } catch (Exception e) {
-                InMemoryDatabase.isDatabaseOffline = true;
-                return toggleHabitInMemory(user.getId(), logDate, habitName);
-            }
-        } else {
-            return toggleHabitInMemory(user.getId(), logDate, habitName);
-        }
-    }
-
-    private ResponseEntity<?> toggleHabitInMemory(String userId, LocalDate logDate, String habitName) {
-        Optional<HabitLog> existingLogOpt = InMemoryDatabase.habitLogs.stream()
-                .filter(h -> h.getUserId().equals(userId) && h.getDate().equals(logDate))
-                .findFirst();
-        
+        Optional<HabitLog> existingLogOpt = habitLogRepository.findByUserIdAndDate(user.getId(), logDate);
         HabitLog log;
+
         if (existingLogOpt.isPresent()) {
             log = existingLogOpt.get();
             List<String> completed = log.getCompletedHabits();
             if (completed.contains(habitName)) {
-                completed.remove(habitName);
+                completed.remove(habitName); // Toggle off
             } else {
-                completed.add(habitName);
+                completed.add(habitName); // Toggle on
             }
         } else {
             List<String> completed = new ArrayList<>();
             completed.add(habitName);
             log = HabitLog.builder()
-                    .id(UUID.randomUUID().toString())
-                    .userId(userId)
+                    .user(user)
                     .date(logDate)
                     .completedHabits(completed)
                     .build();
-            InMemoryDatabase.habitLogs.add(log);
         }
-        return ResponseEntity.ok(log);
+
+        HabitLog savedLog = habitLogRepository.save(log);
+        return ResponseEntity.ok(savedLog);
     }
 
     @GetMapping("/history")
     public ResponseEntity<List<HabitLog>> getHabitHistory(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
-        List<HabitLog> history;
-        if (!InMemoryDatabase.isDatabaseOffline) {
-            try {
-                history = habitLogRepository.findByUserId(user.getId());
-                history = new ArrayList<>(history);
-            } catch (Exception e) {
-                InMemoryDatabase.isDatabaseOffline = true;
-                history = InMemoryDatabase.habitLogs.stream()
-                        .filter(h -> h.getUserId().equals(user.getId()))
-                        .collect(Collectors.toList());
-            }
-        } else {
-            history = InMemoryDatabase.habitLogs.stream()
-                    .filter(h -> h.getUserId().equals(user.getId()))
-                    .collect(Collectors.toList());
-        }
+        List<HabitLog> history = habitLogRepository.findByUserId(user.getId());
+        history = new ArrayList<>(history);
         history.sort((a, b) -> b.getDate().compareTo(a.getDate()));
         return ResponseEntity.ok(history);
     }
@@ -113,22 +60,7 @@ public class HabitController {
     @GetMapping("/streaks")
     public ResponseEntity<?> getHabitStreaks(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
-        List<HabitLog> logs;
-        
-        if (!InMemoryDatabase.isDatabaseOffline) {
-            try {
-                logs = habitLogRepository.findByUserId(user.getId());
-            } catch (Exception e) {
-                InMemoryDatabase.isDatabaseOffline = true;
-                logs = InMemoryDatabase.habitLogs.stream()
-                        .filter(h -> h.getUserId().equals(user.getId()))
-                        .collect(Collectors.toList());
-            }
-        } else {
-            logs = InMemoryDatabase.habitLogs.stream()
-                    .filter(h -> h.getUserId().equals(user.getId()))
-                    .collect(Collectors.toList());
-        }
+        List<HabitLog> logs = habitLogRepository.findByUserId(user.getId());
 
         // Map logs by date for quick lookup
         Map<LocalDate, List<String>> habitsByDate = new HashMap<>();

@@ -4,7 +4,7 @@ import { Send, Sprout, User, HeartHandshake } from 'lucide-react';
 
 const Chatbot = () => {
   const [messages, setMessages] = useState([
-    { role:'bot', text:"Hi there! 🌸 I'm MindMate, your caring wellness companion. I'm here to listen, reflect, and support you. How are you feeling today?" }
+    { role:'bot', text:"Hi there! 🌸 I'm Serenity, your caring wellness companion. I'm here to listen, reflect, and support you. How are you feeling today?" }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -41,7 +41,6 @@ const Chatbot = () => {
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-4" style={{ height:'calc(100vh - 120px)' }}>
 
-      {/* Header */}
       <div className="card px-5 py-4 flex items-center justify-between flex-shrink-0" style={{ borderRadius:'20px' }}>
         <div className="flex items-center gap-3">
           <div className="relative flex-shrink-0">
@@ -53,7 +52,7 @@ const Chatbot = () => {
               style={{ background:'#4caf50' }} />
           </div>
           <div>
-            <h3 className="font-bold text-sm text-ink-800">MindMate AI Buddy</h3>
+            <h3 className="font-bold text-sm text-ink-800">Serenity</h3>
             <span className="text-[10px] font-semibold" style={{ color:'#4caf50' }}>● Here for you</span>
           </div>
         </div>
@@ -64,14 +63,12 @@ const Chatbot = () => {
         </div>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 card overflow-y-auto p-5 space-y-4 no-scrollbar min-h-0"
         style={{ borderRadius:'24px', background:'#FAFAF7' }}>
         {messages.map((msg, idx) => {
           const isBot = msg.role === 'bot';
           return (
             <div key={idx} className={`flex items-end gap-2.5 max-w-[85%] ${isBot ? '' : 'ml-auto flex-row-reverse'}`}>
-              {/* Avatar */}
               <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
                 style={isBot
                   ? { background:'linear-gradient(135deg,#f5f0ff,#dccef9)', border:'1px solid #dccef9' }
@@ -80,8 +77,6 @@ const Chatbot = () => {
                   ? <Sprout className="w-4 h-4" style={{ color:'#8b5cf6' }} />
                   : <User className="w-4 h-4 text-white" />}
               </div>
-
-              {/* Bubble */}
               <div className="px-4 py-3 rounded-2xl text-xs leading-relaxed max-w-full"
                 style={isBot
                   ? { background:'#ffffff', border:'1px solid #EEF0F5', color:'#2D3748', borderBottomLeftRadius:'6px',
@@ -94,7 +89,6 @@ const Chatbot = () => {
           );
         })}
 
-        {/* Typing */}
         {loading && (
           <div className="flex items-end gap-2.5">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center"
@@ -113,9 +107,7 @@ const Chatbot = () => {
         <div ref={feedEndRef} />
       </div>
 
-      {/* Input Area */}
       <div className="space-y-3 flex-shrink-0">
-        {/* Prompt chips */}
         {messages.length === 1 && (
           <div className="flex flex-wrap gap-2 justify-center">
             {promptChips.map((chip, idx) => (
@@ -128,7 +120,6 @@ const Chatbot = () => {
           </div>
         )}
 
-        {/* Input box */}
         <div className="flex items-center gap-2 p-2 rounded-2xl"
           style={{ background:'#ffffff', border:'1.5px solid #E2E6ED', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
           <input
@@ -148,7 +139,7 @@ const Chatbot = () => {
         </div>
 
         <p className="text-center text-[9px] text-ink-300">
-          MindMate AI is a wellness companion, not a clinical therapist. For emergencies, call 988 or local emergency services.
+          Serenity is a wellness companion, not a clinical therapist. For emergencies, call 988 or local emergency services.
         </p>
       </div>
     </div>

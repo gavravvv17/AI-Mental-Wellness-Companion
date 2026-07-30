@@ -9,6 +9,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
@@ -25,8 +26,15 @@ public class GeminiService {
     @Value("${gemini.api.url}")
     private String apiUrl;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    public GeminiService() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5_000);
+        factory.setReadTimeout(45_000);
+        this.restTemplate = new RestTemplate(factory);
+    }
 
     public static class JournalAnalysis {
         public String summary;
@@ -43,9 +51,6 @@ public class GeminiService {
         }
     }
 
-    /**
-     * Analyze a journal entry using Gemini or a smart mock fallback.
-     */
     public JournalAnalysis analyzeJournal(String content) {
         if (!StringUtils.hasText(apiKey)) {
             logger.info("Gemini API key is not configured. Using local smart analyzer.");
@@ -73,9 +78,6 @@ public class GeminiService {
         }
     }
 
-    /**
-     * Chat with the user's AI supportive buddy using Gemini or a smart fallback.
-     */
     public String getChatBuddyResponse(String userMessage, List<Map<String, String>> chatHistory) {
         if (!StringUtils.hasText(apiKey)) {
             return generateMockChatResponse(userMessage);
@@ -83,37 +85,45 @@ public class GeminiService {
 
         try {
             StringBuilder promptBuilder = new StringBuilder();
-            promptBuilder.append("You are MindMate, a compassionate, supportive, and active-listening AI mental wellness companion. ")
+            promptBuilder.append("You are Serenity, a compassionate, supportive, and active-listening AI mental wellness companion. ")
                     .append("Your goal is to provide a safe space, validate the user's feelings, and ask open-ended questions. ")
                     .append("Never provide clinical diagnoses or pretend to be a medical professional. If the user is in severe distress or talks about self-harm, ")
                     .append("gently provide support and strongly encourage them to seek professional support, providing a disclaimer. Keep responses warm, engaging, and under 3-4 sentences.\n\n");
 
-            promptBuilder.append("Chat History:\n");
-            for (Map<String, String> msg : chatHistory) {
-                String role = msg.get("role");
-                String text = msg.get("text");
-                promptBuilder.append(role.equals("user") ? "User: " : "MindMate: ").append(text).append("\n");
+            if (chatHistory != null) {
+                promptBuilder.append("Chat History:\n");
+                for (Map<String, String> msg : chatHistory) {
+                    String role = msg.get("role");
+                    String text = msg.get("text");
+                    if (role != null && text != null) {
+                        promptBuilder.append(role.equals("user") ? "User: " : "Serenity: ").append(text).append("\n");
+                    }
+                }
             }
             promptBuilder.append("User: ").append(userMessage).append("\n");
-            promptBuilder.append("MindMate:");
+            promptBuilder.append("Serenity:");
 
-            return callGemini(promptBuilder.toString());
+            return callGeminiText(promptBuilder.toString());
         } catch (Exception e) {
             logger.error("Error communicating with Gemini API for chat, falling back to mock: {}", e.getMessage());
             return generateMockChatResponse(userMessage);
         }
     }
 
-    /**
-     * Call the Gemini API.
-     */
     private String callGemini(String prompt) throws Exception {
+        return callGeminiInternal(prompt, true);
+    }
+
+    private String callGeminiText(String prompt) throws Exception {
+        return callGeminiInternal(prompt, false);
+    }
+
+    private String callGeminiInternal(String prompt, boolean jsonMode) throws Exception {
         String urlWithKey = apiUrl + "?key=" + apiKey;
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        // Build Gemini payload structure
         Map<String, Object> textPart = new HashMap<>();
         textPart.put("text", prompt);
 
@@ -123,10 +133,11 @@ public class GeminiService {
         Map<String, Object> contentMap = new HashMap<>();
         contentMap.put("contents", Collections.singletonList(parts));
 
-        // Add generationConfig for JSON response if we want it strictly
-        Map<String, Object> genConfig = new HashMap<>();
-        genConfig.put("responseMimeType", "application/json");
-        contentMap.put("generationConfig", genConfig);
+        if (jsonMode) {
+            Map<String, Object> genConfig = new HashMap<>();
+            genConfig.put("responseMimeType", "application/json");
+            contentMap.put("generationConfig", genConfig);
+        }
 
         String jsonPayload = objectMapper.writeValueAsString(contentMap);
 
@@ -135,7 +146,6 @@ public class GeminiService {
 
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
             JsonNode root = objectMapper.readTree(response.getBody());
-            // Extract the generated text from Gemini structure: candidates[0].content.parts[0].text
             JsonNode candidates = root.path("candidates");
             if (candidates.isArray() && candidates.size() > 0) {
                 JsonNode partsNode = candidates.get(0).path("content").path("parts");
@@ -147,12 +157,8 @@ public class GeminiService {
         throw new RuntimeException("Empty or failed response from Gemini API");
     }
 
-    /**
-     * Parse the JSON response from Gemini.
-     */
     private JournalAnalysis parseJournalAnalysis(String jsonText, String originalContent) {
         try {
-            // Strip out markdown code block characters if Gemini ignored the instruction
             String cleanJson = jsonText.trim();
             if (cleanJson.startsWith("```")) {
                 int firstBrace = cleanJson.indexOf("{");
@@ -169,15 +175,12 @@ public class GeminiService {
         }
     }
 
-    /**
-     * Smart mock analyzer based on keyword search.
-     */
     private JournalAnalysis generateMockAnalysis(String content) {
         JournalAnalysis analysis = new JournalAnalysis();
         String text = content.toLowerCase();
 
         analysis.summary = "You reflected on your current experiences and feelings in this entry.";
-        analysis.sentimentScore = 0.1; // neutral-positive default
+        analysis.sentimentScore = 0.1;
 
         if (text.contains("stress") || text.contains("work") || text.contains("burnout") || text.contains("exam") || text.contains("busy")) {
             analysis.sentimentScore = -0.3;
@@ -232,7 +235,6 @@ public class GeminiService {
                     "Write down three details about this experience that you want to remember."
             ));
         } else {
-            // Default Neutral
             analysis.themes.addAll(Arrays.asList("daily reflection", "neutral check-in"));
             analysis.reflectionQuestions.addAll(Arrays.asList(
                     "What was the most peaceful moment of your day today?",
@@ -245,7 +247,6 @@ public class GeminiService {
             ));
         }
 
-        // Safety triggers check
         if (text.contains("suicide") || text.contains("kill myself") || text.contains("end it all") || text.contains("self-harm") || text.contains("want to die")) {
             analysis.safetyAlertTriggered = true;
             analysis.sentimentScore = -0.95;
@@ -260,23 +261,115 @@ public class GeminiService {
         return analysis;
     }
 
-    /**
-     * Smart mock chat response helper.
-     */
     private String generateMockChatResponse(String userMessage) {
         String msg = userMessage.toLowerCase();
-        if (msg.contains("hello") || msg.contains("hi") || msg.contains("hey")) {
-            return "Hello there! I'm MindMate, your supportive buddy. How has your day been shaping up? I'm here to listen.";
+        Random rand = new Random();
+
+        if (msg.matches(".*\\b(hello|hi|hey|good morning|good evening|good afternoon|sup|howdy)\\b.*")) {
+            String[] opts = {
+                "Hey! 😊 It's great to have you here. How are you feeling right now — emotionally, mentally, physically?",
+                "Hi there! I'm Serenity, and I'm fully here for you. What's been on your mind lately?",
+                "Hello! I'm so glad you reached out. Tell me — how has your day been treating you so far?"
+            };
+            return opts[rand.nextInt(opts.length)];
         }
-        if (msg.contains("sad") || msg.contains("lonely") || msg.contains("depressed") || msg.contains("crying")) {
-            return "I am so sorry you are feeling this way. It is completely okay to feel sad or lonely sometimes. Remember to treat yourself with gentle kindness right now. Would you like to write more about what's on your mind?";
+
+        if (msg.matches(".*\\b(sad|unhappy|miserable|depressed|depression|hopeless|worthless|empty|numb|broken|cry|crying|cried|tears)\\b.*")) {
+            String[] opts = {
+                "I'm really sorry you're feeling this way — that kind of heaviness is so hard to carry. You don't have to explain yourself perfectly; I just want you to know I'm here. Can you tell me a bit more about what's been going on?",
+                "Sadness can feel so isolating, but reaching out like this takes real courage. What's been the hardest part of today for you?",
+                "Thank you for trusting me with this. It sounds like you're going through something really painful right now. Is this something that's been building for a while, or did something happen recently?"
+            };
+            return opts[rand.nextInt(opts.length)];
         }
-        if (msg.contains("stress") || msg.contains("anxious") || msg.contains("overwhelm") || msg.contains("exam")) {
-            return "It sounds like you're carrying a heavy load right now. Stress and anxiety can feel very physical. Let's take a deep breath together. Would you like to look at some grounding exercises, or simply vent?";
+
+        if (msg.matches(".*\\b(anxious|anxiety|stress|stressed|overwhelm|overwhelmed|panic|worry|worried|nervous|tense|dread|burnout|racing thoughts)\\b.*")) {
+            String[] opts = {
+                "That sounds really overwhelming. When anxiety piles up, even small things can feel impossible. Take a slow breath — in for 4 counts, hold for 4, out for 4. Now, what's the biggest thing weighing on you right now?",
+                "Stress and anxiety are your mind's way of flagging that something needs attention. What feels like the main source of pressure for you at the moment?",
+                "I hear you — that restless, overwhelmed feeling is genuinely exhausting. What's one thing you can set aside mentally, just for the next 10 minutes, so we can focus on right now?"
+            };
+            return opts[rand.nextInt(opts.length)];
         }
-        if (msg.contains("thank") || msg.contains("help")) {
-            return "You are very welcome! Supporting you is my primary goal. Remember that taking care of your mind is a daily journey. Is there anything else you'd like to talk about?";
+
+        if (msg.matches(".*\\b(angry|anger|furious|frustrated|frustration|annoyed|irritated|rage|mad|hate|fed up)\\b.*")) {
+            String[] opts = {
+                "Anger often shows up when something important to us feels threatened or ignored. What's been happening that's stirred this up?",
+                "It's completely valid to feel angry — your feelings are real and they matter. What's the situation you're dealing with right now?",
+                "That frustration makes sense. Sometimes anger is just hurt in disguise. Can you walk me through what happened?"
+            };
+            return opts[rand.nextInt(opts.length)];
         }
-        return "Thank you for sharing that with me. I hear you, and I validate what you're going through. What do you think would bring you even a small sense of ease or comfort right now?";
+
+        if (msg.matches(".*\\b(lonely|alone|isolated|no one|nobody|no friends|no support|disconnected|invisible)\\b.*")) {
+            String[] opts = {
+                "Loneliness is one of the most painful feelings there is, and I want you to know — right now, in this moment, you are not alone. What's been making you feel disconnected?",
+                "Feeling unseen or unheard is genuinely hard. I see you, and I'm listening. Is this something that's been going on for a while?",
+                "It takes strength to admit you're feeling lonely. Is there someone in your life you feel you could reach out to, even with a simple message? Sometimes a small connection can shift things."
+            };
+            return opts[rand.nextInt(opts.length)];
+        }
+
+        if (msg.matches(".*\\b(happy|excited|great|amazing|awesome|fantastic|wonderful|thrilled|joyful|good news|proud|celebrate|win|won)\\b.*")) {
+            String[] opts = {
+                "That's genuinely wonderful to hear! 🎉 I love that you're having a bright moment — what happened? Tell me more!",
+                "Yes! It's so important to notice and celebrate the good. What's the source of this happiness?",
+                "This makes me so happy for you! 😊 Positive moments are worth holding onto. What are you feeling proud or excited about?"
+            };
+            return opts[rand.nextInt(opts.length)];
+        }
+
+        if (msg.matches(".*\\b(can't sleep|insomnia|tired|exhausted|no sleep|sleep deprived|fatigued|restless|awake all night)\\b.*")) {
+            String[] opts = {
+                "Poor sleep affects everything — mood, focus, resilience. What's been keeping you awake? Is it racing thoughts, physical discomfort, or something else?",
+                "Exhaustion is so draining, both mentally and physically. Have you been struggling with sleep for a while, or is this recent?",
+                "Sleep troubles are really common when stress or anxiety are high. What does your bedtime routine look like right now? Sometimes small adjustments make a big difference."
+            };
+            return opts[rand.nextInt(opts.length)];
+        }
+
+        if (msg.matches(".*\\b(work|job|boss|deadline|exam|study|college|school|homework|assignment|project|career)\\b.*")) {
+            String[] opts = {
+                "It sounds like there's a lot of pressure coming from that direction. What's the most stressful part of what you're dealing with at work or school right now?",
+                "Work and study pressures can really wear you down. Are you feeling overwhelmed by the volume, the difficulty, or something interpersonal?",
+                "That kind of sustained pressure is tough. When did you last take a genuine break — not just a scroll, but actual rest? Your mind needs recovery time too."
+            };
+            return opts[rand.nextInt(opts.length)];
+        }
+
+        if (msg.matches(".*\\b(relationship|partner|boyfriend|girlfriend|husband|wife|family|parent|friend|breakup|broke up|divorce|fight|argument|conflict)\\b.*")) {
+            String[] opts = {
+                "Relationship difficulties are some of the most emotionally intense experiences we go through. What's been happening?",
+                "It sounds like there's some real tension in an important relationship. Do you want to talk through what happened, or more about how you're feeling right now?",
+                "Conflicts with the people we care about can be really draining. How long has this been going on, and how are you holding up?"
+            };
+            return opts[rand.nextInt(opts.length)];
+        }
+
+        if (msg.matches(".*\\b(grateful|gratitude|thankful|blessed|appreciate|mindful|journal|reflect|meditation|breathe)\\b.*")) {
+            String[] opts = {
+                "That's a beautiful practice — gratitude and reflection genuinely rewire how we see the world. What are you feeling appreciative of today?",
+                "I love that you're tuning into gratitude. It's such a powerful anchor. What's one thing, big or small, that felt good today?",
+                "Mindfulness is such a powerful tool. How are you feeling after taking that moment for yourself?"
+            };
+            return opts[rand.nextInt(opts.length)];
+        }
+
+        if (msg.matches(".*\\b(suicide|kill myself|end it|self.harm|hurt myself|want to die|not worth living)\\b.*")) {
+            return "I'm really concerned about what you've shared, and I want you to know that your life matters deeply. Please reach out to a crisis helpline right now — iCall: 9152987821 or Vandrevala Foundation: 1860-2662-345 (available 24/7). You don't have to face this alone. Is there someone you trust you can call right now?";
+        }
+
+        String[] fallbacks = {
+            "That's really interesting — tell me more. How long have you been feeling this way?",
+            "I appreciate you opening up. What's been the most difficult part of this for you?",
+            "It sounds like there's a lot going on. What would feel most helpful right now — to vent, to problem-solve, or just to feel heard?",
+            "I'm here and I'm listening. Sometimes just putting it into words helps. What else is on your mind?",
+            "That makes a lot of sense given what you're going through. What does your support system look like right now?",
+            "I'm glad you're talking about this. How are you taking care of yourself through all of this?",
+            "You know yourself better than anyone. What do you think would help you most right now?",
+            "It takes courage to talk about these things. Can you tell me more about what's been going on for you lately?",
+            "I want to understand this better. What has this experience been like for you day to day?"
+        };
+        return fallbacks[rand.nextInt(fallbacks.length)];
     }
 }

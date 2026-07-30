@@ -34,12 +34,14 @@ public class TimelineResponse {
         private Integer waterIntakeMl;
         
         // Journal details
+        private String journalId;
         private String journalTitle;
         private String journalSummary;
         private Double journalSentiment;
         private Boolean safetyAlertTriggered;
         
         // Life events details
+        private String lifeEventId;
         private String lifeEventTitle;
         private String lifeEventDescription;
         

@@ -111,21 +111,105 @@ class AmbientEngine {
     }
 
     if (id === 'fire') {
-      // Low-pass noise with slight amplitude modulation for crackle
-      const noise = this._whiteNoise(ctx);
-      const lpf = ctx.createBiquadFilter();
-      lpf.type = 'lowpass'; lpf.frequency.value = 800; lpf.Q.value = 2;
+      // 1. Warm background flame rumble (deeper low-pass white noise)
+      const roarNoise = this._whiteNoise(ctx);
+      const roarFilter = ctx.createBiquadFilter();
+      roarFilter.type = 'lowpass';
+      roarFilter.frequency.value = 250;
+      
+      const roarGain = ctx.createGain();
+      roarGain.gain.value = 0.22;
 
-      // Crackle LFO (faster, irregular feel)
-      const crackleLfo = ctx.createOscillator();
-      crackleLfo.type = 'sawtooth'; crackleLfo.frequency.value = 6;
-      const crackleGain = ctx.createGain(); crackleGain.gain.value = 0.12;
-      crackleLfo.connect(crackleGain);
-      crackleGain.connect(gainNode.gain);
+      // Add a slow LFO to rumble to simulate flickering flame
+      const flickerOsc = ctx.createOscillator();
+      flickerOsc.type = 'sine';
+      flickerOsc.frequency.value = 0.45;
+      const flickerGain = ctx.createGain();
+      flickerGain.gain.value = 0.06;
+      
+      flickerOsc.connect(flickerGain);
+      flickerGain.connect(roarGain.gain);
 
-      noise.connect(lpf); lpf.connect(gainNode);
-      noise.start(); crackleLfo.start();
-      sources.push(noise, crackleLfo);
+      roarNoise.connect(roarFilter);
+      roarFilter.connect(roarGain);
+      roarGain.connect(gainNode);
+
+      roarNoise.start();
+      flickerOsc.start();
+      sources.push(roarNoise, flickerOsc);
+
+      // 2. Resonant wood snaps & pops (band-pass filtered white noise with scheduled envelopes)
+      const crackleNoise = this._whiteNoise(ctx);
+      const crackleFilter = ctx.createBiquadFilter();
+      crackleFilter.type = 'bandpass';
+      crackleFilter.frequency.value = 1500;
+      crackleFilter.Q.value = 5; // Highly resonant woody quality
+
+      const crackleGain = ctx.createGain();
+      crackleGain.gain.value = 0;
+
+      crackleNoise.connect(crackleFilter);
+      crackleFilter.connect(crackleGain);
+      crackleGain.connect(gainNode);
+
+      crackleNoise.start();
+      sources.push(crackleNoise);
+
+      // 3. Subtle leaf sizzle (very quiet high-pass white noise to add realism)
+      const sizzleNoise = this._whiteNoise(ctx);
+      const sizzleFilter = ctx.createBiquadFilter();
+      sizzleFilter.type = 'highpass';
+      sizzleFilter.frequency.value = 5000;
+      const sizzleGain = ctx.createGain();
+      sizzleGain.gain.value = 0.015;
+
+      sizzleNoise.connect(sizzleFilter);
+      sizzleFilter.connect(sizzleGain);
+      sizzleGain.connect(gainNode);
+      
+      sizzleNoise.start();
+      sources.push(sizzleNoise);
+
+      // Schedule the pops using a setInterval
+      const fireInterval = setInterval(() => {
+        if (this.ctx && this.ctx.state !== 'closed') {
+          const now = this.ctx.currentTime;
+          
+          // Schedule 1 to 3 snaps/pops in the next 150ms window
+          const popCount = Math.floor(Math.random() * 3) + 1;
+          for (let i = 0; i < popCount; i++) {
+            const timeOffset = Math.random() * 0.15;
+            const popTime = now + timeOffset;
+            
+            // Randomly decide if it's a minor snap or a louder hollow wood pop
+            const isLoudPop = Math.random() < 0.15;
+            
+            // Set dynamic pitch for this snap (wood resonance)
+            const popFreq = isLoudPop
+              ? 600 + Math.random() * 600     // lower pitch for large hollow pop (600Hz - 1200Hz)
+              : 1200 + Math.random() * 1200;  // higher pitch for sharp snaps (1200Hz - 2400Hz)
+              
+            const peakGain = isLoudPop 
+              ? 0.25 + Math.random() * 0.25   // loud pop amplitude
+              : 0.03 + Math.random() * 0.08;  // minor snap amplitude
+            
+            const decayTime = isLoudPop
+              ? 0.03 + Math.random() * 0.05   // 30-80ms decay
+              : 0.005 + Math.random() * 0.015; // 5-20ms decay
+
+            // Apply filter resonance change and envelope
+            crackleFilter.frequency.setValueAtTime(popFreq, popTime);
+            crackleGain.gain.setValueAtTime(0, popTime);
+            crackleGain.gain.linearRampToValueAtTime(peakGain, popTime + 0.001);
+            crackleGain.gain.exponentialRampToValueAtTime(0.0001, popTime + decayTime);
+            crackleGain.gain.setValueAtTime(0, popTime + decayTime + 0.001);
+          }
+        }
+      }, 150);
+
+      this.nodes[id] = { gainNode, sources, fireInterval };
+      gainNode.gain.setTargetAtTime(volume, ctx.currentTime, 0.5);
+      return;
     }
 
     gainNode.gain.setTargetAtTime(volume, ctx.currentTime, 0.5);
@@ -141,8 +225,9 @@ class AmbientEngine {
 
   stop(id) {
     if (this.nodes[id]) {
-      const { gainNode, sources, chirpInterval } = this.nodes[id];
+      const { gainNode, sources, chirpInterval, fireInterval } = this.nodes[id];
       if (chirpInterval) clearInterval(chirpInterval);
+      if (fireInterval) clearInterval(fireInterval);
       const ctx = this._getCtx();
       gainNode.gain.setTargetAtTime(0, ctx.currentTime, 0.3);
       setTimeout(() => {
@@ -187,6 +272,9 @@ const Mindfulness = () => {
   const [secondsLeft, setSecondsLeft] = useState(4);
   const [breathingActive, setBreathingActive] = useState(false);
   const breathTimerRef = useRef(null);
+  // Refs to hold current phase & seconds so the interval closure always reads fresh values
+  const phaseRef = useRef('Inhale');
+  const secsRef  = useRef(4);
 
   const patterns = {
     box:   { inhale: 4, hold: 4, exhale: 4, holdExhale: 4, label: 'Box Breathing',  sub: 'Calms the nervous system' },
@@ -194,41 +282,57 @@ const Mindfulness = () => {
     equal: { inhale: 4, hold: 0, exhale: 4, holdExhale: 0, label: 'Equal Breathing', sub: 'Improves focus & balance' },
   };
 
+  // Helper: sync ref + React state together
+  const setPhase = (phase) => { phaseRef.current = phase; setBreathPhase(phase); };
+  const setSecs  = (s)     => { secsRef.current  = s;     setSecondsLeft(s);     };
+
+  // Reset when pattern changes
   useEffect(() => {
-    setBreathPhase('Inhale');
-    setSecondsLeft(patterns[breathPattern].inhale);
-    setBreathingActive(false);
     if (breathTimerRef.current) clearInterval(breathTimerRef.current);
-  }, [breathPattern]);
+    setBreathingActive(false);
+    setPhase('Inhale');
+    setSecs(patterns[breathPattern].inhale);
+  }, [breathPattern]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (breathingActive) {
-      breathTimerRef.current = setInterval(() => {
-        setSecondsLeft(prev => {
-          if (prev <= 1) {
-            const p = patterns[breathPattern];
-            setBreathPhase(curr => {
-              if (curr === 'Inhale') {
-                if (p.hold > 0) { setSecondsLeft(p.hold); return 'Hold'; }
-                setSecondsLeft(p.exhale); return 'Exhale';
-              }
-              if (curr === 'Hold') { setSecondsLeft(p.exhale); return 'Exhale'; }
-              if (curr === 'Exhale') {
-                if (p.holdExhale > 0) { setSecondsLeft(p.holdExhale); return 'Hold Exhale'; }
-                setSecondsLeft(p.inhale); return 'Inhale';
-              }
-              setSecondsLeft(p.inhale); return 'Inhale';
-            });
-            return prev; // will be overwritten by setSecondsLeft above
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
+    if (!breathingActive) {
       if (breathTimerRef.current) clearInterval(breathTimerRef.current);
+      return;
     }
+
+    breathTimerRef.current = setInterval(() => {
+      const newSecs = secsRef.current - 1;
+
+      if (newSecs > 0) {
+        // Still counting down in current phase
+        setSecs(newSecs);
+      } else {
+        // Time to advance to next phase
+        const p = patterns[breathPattern];
+        const curr = phaseRef.current;
+        let nextPhase;
+        let nextSecs;
+
+        if (curr === 'Inhale') {
+          if (p.hold > 0) { nextPhase = 'Hold';       nextSecs = p.hold; }
+          else            { nextPhase = 'Exhale';     nextSecs = p.exhale; }
+        } else if (curr === 'Hold') {
+          nextPhase = 'Exhale'; nextSecs = p.exhale;
+        } else if (curr === 'Exhale') {
+          if (p.holdExhale > 0) { nextPhase = 'Hold Exhale'; nextSecs = p.holdExhale; }
+          else                  { nextPhase = 'Inhale';      nextSecs = p.inhale; }
+        } else {
+          // 'Hold Exhale'
+          nextPhase = 'Inhale'; nextSecs = p.inhale;
+        }
+
+        setPhase(nextPhase);
+        setSecs(nextSecs);
+      }
+    }, 1000);
+
     return () => { if (breathTimerRef.current) clearInterval(breathTimerRef.current); };
-  }, [breathingActive, breathPattern]);
+  }, [breathingActive, breathPattern]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const phaseStyles = {
     'Inhale':       { bg: '#cdeccf', border: '#a8d9ab', text: '#388e3c', hint: 'Breathe in slowly through your nose.' },
@@ -441,8 +545,13 @@ const Mindfulness = () => {
                     <input type="range" min="0" max="1" step="0.02"
                       value={volumes[sound.id]}
                       onChange={e => handleVolumeChange(sound.id, parseFloat(e.target.value))}
+                      onDragStart={e => e.preventDefault()}
                       className="w-full"
-                      style={{ accentColor: sound.color }} />
+                      style={{
+                        color: sound.color,
+                        '--slider-color': sound.color,
+                        '--slider-percent': `${volumes[sound.id] * 100}%`
+                      }} />
                     <Volume2 className="w-3.5 h-3.5 flex-shrink-0 text-ink-400" />
                   </div>
                 </div>

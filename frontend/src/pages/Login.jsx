@@ -20,9 +20,7 @@ const Login = ({ setAuthView }) => {
 
   return (
     <div className="min-h-screen flex" style={{ background: 'linear-gradient(135deg, #f5f0ff 0%, #fafaf7 40%, #f0faf0 100%)' }}>
-      {/* Left Panel */}
       <div className="hidden lg:flex flex-col justify-between w-1/2 p-12 relative overflow-hidden">
-        {/* Floating blobs */}
         <div className="absolute top-[-60px] left-[-60px] w-[280px] h-[280px] rounded-full opacity-40 animate-float"
           style={{ background: 'radial-gradient(circle, #dccef9, transparent)' }} />
         <div className="absolute bottom-[10%] right-[-40px] w-[220px] h-[220px] rounded-full opacity-30 animate-float"
@@ -37,7 +35,7 @@ const Login = ({ setAuthView }) => {
               <Sprout className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-ink-800">MindMate AI</h1>
+              <h1 className="text-xl font-bold text-ink-800">Serenity</h1>
               <p className="text-xs text-ink-400">Wellness Companion</p>
             </div>
           </div>
@@ -78,17 +76,15 @@ const Login = ({ setAuthView }) => {
         </div>
       </div>
 
-      {/* Right Panel – Form */}
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
           <div className="card p-8 animate-fade-up" style={{ borderRadius: '28px' }}>
-            {/* Mobile logo */}
             <div className="lg:hidden flex items-center gap-2 mb-6">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center"
                 style={{ background: 'linear-gradient(135deg, #8b5cf6, #a855f7)' }}>
                 <Sprout className="w-5 h-5 text-white" />
               </div>
-              <span className="font-bold text-ink-800">MindMate AI</span>
+              <span className="font-bold text-ink-800">Serenity</span>
             </div>
 
             <h3 className="text-2xl font-bold text-ink-800 mb-1">Welcome back 👋</h3>
@@ -115,7 +111,6 @@ const Login = ({ setAuthView }) => {
               </div>
             )}
 
-            {/* Demo hint */}
             <div className="mb-4 p-3 rounded-2xl flex items-start gap-2"
               style={{ background: '#f0f8ff', border: '1px solid #d8ecff' }}>
               <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-sky-400" />

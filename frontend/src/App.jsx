@@ -4,7 +4,6 @@ import Layout from './components/Layout';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 
-// Feature Pages (to be implemented next)
 import Dashboard from './pages/Dashboard';
 import MoodTracker from './pages/MoodTracker';
 import Journal from './pages/Journal';
@@ -16,17 +15,15 @@ import Chatbot from './pages/Chatbot';
 
 const AppContent = () => {
   const { user } = useAuth();
-  const [authView, setAuthView] = useState('login'); // 'login' or 'signup'
+  const [authView, setAuthView] = useState('login');
   const [currentTab, setCurrentTab] = useState('dashboard');
 
-  // Guard routes: if not authenticated, show login/signup screens
   if (!user) {
     return authView === 'login' 
       ? <Login setAuthView={setAuthView} /> 
       : <Signup setAuthView={setAuthView} />;
   }
 
-  // Active view router based on currentTab state
   const renderContent = () => {
     switch (currentTab) {
       case 'dashboard':

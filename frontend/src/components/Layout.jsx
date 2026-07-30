@@ -13,7 +13,7 @@ const navItems = [
   { id: 'timeline',   label: 'Life Timeline', icon: TreePine,        color: '#4caf50', bg: '#f0faf0' },
   { id: 'mindfulness',label: 'Mindfulness',   icon: Wind,            color: '#0ea5e9', bg: '#f0f8ff' },
   { id: 'circle',     label: 'My Circle',     icon: Users,           color: '#ec4899', bg: '#fff5f5' },
-  { id: 'chatbot',    label: 'AI Buddy',      icon: MessageCircleHeart, color: '#8b5cf6', bg: '#f5f0ff' },
+  { id: 'chatbot',    label: 'Serenity',      icon: MessageCircleHeart, color: '#8b5cf6', bg: '#f5f0ff' },
 ];
 
 const Layout = ({ children, currentTab, setCurrentTab }) => {
@@ -55,19 +55,17 @@ const Layout = ({ children, currentTab, setCurrentTab }) => {
 
   const SidebarContent = ({ onLinkClick }) => (
     <div className="flex flex-col h-full py-6 px-4">
-      {/* Logo */}
       <div className="flex items-center gap-2.5 px-2 mb-8">
         <div className="w-9 h-9 rounded-2xl flex items-center justify-center shadow-md"
           style={{ background: 'linear-gradient(135deg, #8b5cf6, #a855f7)' }}>
           <Sprout className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-base font-bold text-ink-800 leading-none">MindMate</h1>
+          <h1 className="text-base font-bold text-ink-800 leading-none">Serenity</h1>
           <p className="text-[10px] text-ink-300 font-medium mt-0.5">Wellness Companion</p>
         </div>
       </div>
 
-      {/* Nav */}
       <div className="space-y-1 flex-1">
         <p className="text-[10px] font-bold uppercase tracking-widest text-ink-300 px-4 mb-2">Menu</p>
         {navItems.map(item => (
@@ -75,7 +73,6 @@ const Layout = ({ children, currentTab, setCurrentTab }) => {
         ))}
       </div>
 
-      {/* User Card */}
       <div className="mt-4 pt-4 border-t border-warm-100">
         <div className="flex items-center gap-3 px-2 mb-3">
           <div className="w-9 h-9 rounded-2xl flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
@@ -100,19 +97,17 @@ const Layout = ({ children, currentTab, setCurrentTab }) => {
 
   return (
     <div className="flex min-h-screen" style={{ background: '#FAFAF7' }}>
-      {/* Desktop Sidebar */}
       <aside className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 w-64 sidebar z-20">
         <SidebarContent />
       </aside>
 
-      {/* Mobile: Top Bar */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-3.5 bg-white border-b border-warm-100 shadow-sm">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center"
             style={{ background: 'linear-gradient(135deg, #8b5cf6, #a855f7)' }}>
             <Sprout className="w-4 h-4 text-white" />
           </div>
-          <span className="text-base font-bold text-ink-800">MindMate</span>
+          <span className="text-base font-bold text-ink-800">Serenity</span>
         </div>
         <button onClick={() => setMobileOpen(true)}
           className="p-2 rounded-xl bg-warm-50 border border-warm-200 text-ink-400">
@@ -120,7 +115,6 @@ const Layout = ({ children, currentTab, setCurrentTab }) => {
         </button>
       </header>
 
-      {/* Mobile Drawer */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
@@ -134,7 +128,6 @@ const Layout = ({ children, currentTab, setCurrentTab }) => {
         </div>
       )}
 
-      {/* Mobile Bottom Nav */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-warm-100 px-2 py-2 flex items-center justify-around shadow-[0_-2px_12px_rgba(0,0,0,0.06)]">
         {navItems.slice(0, 5).map(item => {
           const Icon = item.icon;
@@ -153,7 +146,6 @@ const Layout = ({ children, currentTab, setCurrentTab }) => {
         })}
       </nav>
 
-      {/* Main Content */}
       <main className="flex-1 lg:ml-64 pt-[62px] lg:pt-0 pb-20 lg:pb-0 min-h-screen">
         <div className="max-w-5xl mx-auto px-4 py-6 md:py-8">
           {children}

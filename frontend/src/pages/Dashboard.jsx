@@ -7,6 +7,109 @@ import {
   ShieldAlert, ArrowRight, Heart, Sparkles
 } from 'lucide-react';
 
+const AFFIRMATIONS = [
+  "Small steps every day lead to big changes.",
+  "Be kind to yourself today — you deserve it.",
+  "Progress is more important than perfection.",
+  "Your feelings are valid. Tomorrow is a fresh start.",
+  "Take a deep breath. You're doing better than you think.",
+  "Rest is not giving up — it's recharging to keep going.",
+  "You are enough, exactly as you are right now.",
+  "Every moment is a new opportunity to begin again.",
+  "Healing is not linear, and that's perfectly okay.",
+  "You have survived every hard day so far. That's strength.",
+  "Be patient with yourself. Growth takes time.",
+  "Your worth is not measured by your productivity.",
+  "Choose one kind thought about yourself today.",
+  "It's okay to ask for help. That takes courage.",
+  "Your presence in this world matters deeply.",
+  "Today, focus on what you can control.",
+  "Breathe in calm, breathe out tension.",
+  "You are allowed to take up space.",
+  "Small wins count — celebrate every one of them.",
+  "Peace begins with a single gentle breath.",
+  "You are growing even when it doesn't feel like it.",
+  "Difficult roads often lead to beautiful destinations.",
+  "Be gentle — you are doing the best you can.",
+  "Every day you choose to show up is a victory.",
+  "Your journey is unique. Don't compare it to anyone else's.",
+  "You are braver than you believe and stronger than you know.",
+  "Feelings are visitors. Let them come and go with grace.",
+  "Today is a good day to notice something beautiful.",
+  "Your mind and body deserve care and compassion.",
+  "Let go of what you cannot change. Focus on what you can.",
+  "You don't need to have it all figured out today.",
+  "Kindness toward yourself opens the door to healing.",
+  "One good minute can shift an entire day.",
+  "You are worthy of love — especially from yourself.",
+  "It's okay to slow down. The world will wait.",
+  "Even tiny progress deserves recognition.",
+  "Your story is still being written. Keep going.",
+  "Joy can be found in the smallest of moments.",
+  "You are not your worst day, your worst thought, or your worst mistake.",
+  "Asking 'how am I doing?' is an act of self-love.",
+  "You have permission to rest without guilt.",
+  "Trust the process, even when the path feels unclear.",
+  "Being honest about how you feel is a form of bravery.",
+  "You are a work in progress — and that's beautiful.",
+  "The courage to begin is the hardest step. You already took it.",
+  "Nourish your mind the way you would nourish a garden.",
+  "Today, let 'good enough' truly be good enough.",
+  "Notice three things you are grateful for right now.",
+  "You deserve the same compassion you give to others.",
+  "Every sunrise is an invitation to start fresh.",
+  "It's okay not to be okay. You won't feel this way forever.",
+  "Your sensitivity is a superpower, not a weakness.",
+  "Calm is a skill, and you are practicing it right now.",
+  "You are not alone, even when it feels that way.",
+  "Set one small intention today and honour it.",
+  "Resilience grows in the spaces between hardship and hope.",
+  "Let today be a little lighter than yesterday.",
+  "Your mental health is just as important as your physical health.",
+  "You are allowed to change your mind and your path.",
+  "Embrace the pause. Stillness has wisdom in it.",
+  "What you feel matters. What you need matters.",
+  "Be the friend to yourself that you wish you had.",
+  "Struggle is the soil from which strength grows.",
+  "You don't have to earn rest. It is your right.",
+  "Notice the light — inside you and around you.",
+  "You are more resilient than you remember.",
+  "Breathe. This moment is manageable.",
+  "Your best looks different every day, and that's okay.",
+  "Even a cloudy day has light behind it.",
+  "You are capable of more than you currently believe.",
+  "Reach out, open up, and let someone in today.",
+  "This feeling will pass. You will be okay.",
+  "You are learning, growing, and becoming — every single day.",
+  "Celebrate the fact that you're still here, still trying.",
+];
+
+const getDailyAffirmation = () => {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const dayOfYear = Math.floor((now - start) / 86_400_000);
+  return AFFIRMATIONS[dayOfYear % AFFIRMATIONS.length];
+};
+
+const ENERGY_MESSAGES = [
+  ["Take it easy today.", "Rest is productive too.", "Be gentle with yourself."],
+  ["Take it easy today.", "Rest is productive too.", "Be gentle with yourself."],
+  ["Take it easy today.", "Rest is productive too.", "Be gentle with yourself."],
+  ["Start with something small.", "One step at a time.", "Take frequent breaks."],
+  ["Start with something small.", "One step at a time.", "Take frequent breaks."],
+  ["You're doing well — keep a steady pace.", "Balance work and rest today.", "Steady is strong."],
+  ["You're doing well — keep a steady pace.", "Balance work and rest today.", "Steady is strong."],
+  ["You're feeling energised today!", "Great time to tackle your goals.", "Keep this positive momentum going."],
+  ["You're feeling energised today!", "Great time to tackle your goals.", "Keep this positive momentum going."],
+  ["You're thriving today!", "Your energy is inspiring.", "Make the most of this wonderful day."],
+  ["You're thriving today!", "Your energy is inspiring.", "Make the most of this wonderful day."],
+];
+
+const getEnergyMessage = (level) => {
+  const pool = ENERGY_MESSAGES[Math.min(10, Math.max(0, Math.round(level)))];
+  return pool[new Date().getDay() % pool.length];
+};
+
 const Skeleton = ({ className = '' }) => <div className={`skeleton ${className}`} />;
 
 const Dashboard = ({ setCurrentTab }) => {
@@ -17,6 +120,8 @@ const Dashboard = ({ setCurrentTab }) => {
   const [todayHabits, setTodayHabits] = useState([]);
   const [safetyBanner, setSafetyBanner] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [affirmation] = useState(() => getDailyAffirmation());
+  const [affirmVisible, setAffirmVisible] = useState(true);
 
   const habitsList = [
     { key: 'water',      label: 'Hydration', emoji: '💧', color: '#d8ecff', border: '#93cbff' },
@@ -90,7 +195,6 @@ const Dashboard = ({ setCurrentTab }) => {
   return (
     <div className="space-y-5 page-in">
 
-      {/* Safety Banner */}
       {safetyBanner && (
         <div className="p-5 rounded-3xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-scale-in"
           style={{ background: '#fff5f5', border: '1px solid #fecaca' }}>
@@ -110,7 +214,6 @@ const Dashboard = ({ setCurrentTab }) => {
         </div>
       )}
 
-      {/* Hero Greeting */}
       <div className="rounded-3xl p-7 relative overflow-hidden"
         style={{ background: 'linear-gradient(135deg, #f5f0ff 0%, #ddf5e5 60%, #fff4c7 100%)' }}>
         <div className="absolute right-6 top-4 text-6xl opacity-30 animate-float select-none">🌿</div>
@@ -122,7 +225,7 @@ const Dashboard = ({ setCurrentTab }) => {
         </h2>
         <p className="text-sm text-ink-500 mt-2 max-w-sm">
           {todayMood
-            ? `You're feeling ${todayMood.mood?.toLowerCase()} today. Energy: ${todayMood.energyLevel}/10 — keep going! 🌱`
+            ? `You're feeling ${todayMood.mood?.toLowerCase()} today. Energy: ${todayMood.energyLevel}/10 — ${getEnergyMessage(todayMood.energyLevel)} 🌱`
             : 'Take a gentle moment to check in with yourself. How are you feeling?'}
         </p>
 
@@ -134,10 +237,8 @@ const Dashboard = ({ setCurrentTab }) => {
         )}
       </div>
 
-      {/* Mood + Affirmation row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-        {/* Today's Mood */}
         <div className="card p-5" style={{ borderRadius: '24px' }}>
           <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: '#8b5cf6' }}>Today's Check-in</p>
           {todayMood ? (
@@ -176,24 +277,25 @@ const Dashboard = ({ setCurrentTab }) => {
           )}
         </div>
 
-        {/* Daily Affirmation */}
         <div className="journal-note p-5 flex flex-col justify-between" style={{ borderRadius: '24px' }}>
           <div className="flex items-center gap-1.5 mb-3">
             <Heart className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
             <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Daily Affirmation</span>
           </div>
-          <p className="text-sm font-medium text-ink-700 leading-relaxed italic flex-1">
-            {todayMood?.mood?.toLowerCase() === 'stressed'
-              ? '"You don\'t have to control everything. One step at a time is enough. 🌬️"'
-              : todayMood?.mood?.toLowerCase() === 'sad'
-              ? '"Be gentle with yourself. Every feeling is valid and it\'s okay to rest. 🌷"'
-              : '"Every small step forward is progress worth celebrating. You\'re doing beautifully. 🌟"'}
+          <p
+            className="text-sm font-medium text-ink-700 leading-relaxed italic flex-1"
+            style={{
+              opacity: affirmVisible ? 1 : 0,
+              transform: affirmVisible ? 'translateY(0)' : 'translateY(6px)',
+              transition: 'opacity 0.5s ease, transform 0.5s ease',
+            }}
+          >
+            &ldquo;{affirmation}&rdquo;
           </p>
-          <p className="text-[9px] text-amber-500 mt-3">— MindMate AI</p>
+          <p className="text-[9px] text-amber-500 mt-3">— Serenity</p>
         </div>
       </div>
 
-      {/* Daily Habits */}
       <div className="card p-6" style={{ borderRadius: '24px' }}>
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -202,7 +304,6 @@ const Dashboard = ({ setCurrentTab }) => {
               {completedCount === 6 ? '🎉 All done! You\'re amazing!' : `${completedCount} of 6 completed`}
             </p>
           </div>
-          {/* Progress bar */}
           <div className="flex flex-col items-end gap-1">
             <span className="text-xs font-bold" style={{ color: '#8b5cf6' }}>{Math.round((completedCount/6)*100)}%</span>
             <div className="w-24 h-2 rounded-full" style={{ background: '#EEF0F5' }}>
@@ -229,14 +330,13 @@ const Dashboard = ({ setCurrentTab }) => {
         </div>
       </div>
 
-      {/* Wellness Corner */}
       <div>
         <h3 className="font-bold text-ink-800 mb-3">Explore Wellness</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
             { tab:'journal', emoji:'📔', title:'AI Journal', desc:'Write freely and let AI reflect back insights, themes, and coping ideas.', bg:'#fffef0', border:'#fff4c7', color:'#d97706' },
             { tab:'mindfulness', emoji:'🌬️', title:'Breathe & Ground', desc:'Guided breathing, 5-4-3-2-1 grounding, and ambient soundscapes.', bg:'#f0f8ff', border:'#d8ecff', color:'#0ea5e9' },
-            { tab:'chatbot', emoji:'🤝', title:'AI Buddy', desc:'Chat with your supportive companion anytime. Judgment-free.', bg:'#f5f0ff', border:'#dccef9', color:'#8b5cf6' },
+            { tab:'chatbot', emoji:'🤝', title:'Serenity', desc:'Chat with your supportive companion anytime. Judgment-free.', bg:'#f5f0ff', border:'#dccef9', color:'#8b5cf6' },
           ].map(({ tab, emoji, title, desc, bg, border, color }) => (
             <button key={tab} onClick={() => setCurrentTab(tab)}
               className="text-left p-5 rounded-2xl border-2 card-hover cursor-pointer"

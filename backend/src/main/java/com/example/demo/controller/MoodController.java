@@ -3,7 +3,6 @@ package com.example.demo.controller;
 import com.example.demo.model.MoodLog;
 import com.example.demo.model.User;
 import com.example.demo.repository.MoodLogRepository;
-import com.example.demo.service.InMemoryDatabase;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -11,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/mood")
@@ -25,97 +23,41 @@ public class MoodController {
         User user = (User) authentication.getPrincipal();
         LocalDate logDate = moodLogRequest.getDate() != null ? moodLogRequest.getDate() : LocalDate.now();
 
-        if (!InMemoryDatabase.isDatabaseOffline) {
-            try {
-                Optional<MoodLog> existingLogOpt = moodLogRepository.findByUserIdAndDate(user.getId(), logDate);
-                MoodLog moodLog;
-                
-                if (existingLogOpt.isPresent()) {
-                    moodLog = existingLogOpt.get();
-                    moodLog.setMood(moodLogRequest.getMood());
-                    moodLog.setEmotions(moodLogRequest.getEmotions());
-                    moodLog.setEnergyLevel(moodLogRequest.getEnergyLevel());
-                    moodLog.setNote(moodLogRequest.getNote());
-                    moodLog.setSleepHours(moodLogRequest.getSleepHours());
-                    moodLog.setExerciseMinutes(moodLogRequest.getExerciseMinutes());
-                    moodLog.setWaterIntakeMl(moodLogRequest.getWaterIntakeMl());
-                } else {
-                    moodLog = MoodLog.builder()
-                            .userId(user.getId())
-                            .date(logDate)
-                            .mood(moodLogRequest.getMood())
-                            .emotions(moodLogRequest.getEmotions())
-                            .energyLevel(moodLogRequest.getEnergyLevel())
-                            .note(moodLogRequest.getNote())
-                            .sleepHours(moodLogRequest.getSleepHours())
-                            .exerciseMinutes(moodLogRequest.getExerciseMinutes())
-                            .waterIntakeMl(moodLogRequest.getWaterIntakeMl())
-                            .build();
-                }
-
-                MoodLog savedLog = moodLogRepository.save(moodLog);
-                return ResponseEntity.ok(savedLog);
-            } catch (Exception e) {
-                InMemoryDatabase.isDatabaseOffline = true;
-                return logMoodInMemory(user.getId(), logDate, moodLogRequest);
-            }
-        } else {
-            return logMoodInMemory(user.getId(), logDate, moodLogRequest);
-        }
-    }
-
-    private ResponseEntity<?> logMoodInMemory(String userId, LocalDate logDate, MoodLog request) {
-        Optional<MoodLog> existingOpt = InMemoryDatabase.moodLogs.stream()
-                .filter(m -> m.getUserId().equals(userId) && m.getDate().equals(logDate))
-                .findFirst();
-
+        Optional<MoodLog> existingLogOpt = moodLogRepository.findByUserIdAndDate(user.getId(), logDate);
         MoodLog moodLog;
-        if (existingOpt.isPresent()) {
-            moodLog = existingOpt.get();
-            moodLog.setMood(request.getMood());
-            moodLog.setEmotions(request.getEmotions());
-            moodLog.setEnergyLevel(request.getEnergyLevel());
-            moodLog.setNote(request.getNote());
-            moodLog.setSleepHours(request.getSleepHours());
-            moodLog.setExerciseMinutes(request.getExerciseMinutes());
-            moodLog.setWaterIntakeMl(request.getWaterIntakeMl());
+        
+        if (existingLogOpt.isPresent()) {
+            moodLog = existingLogOpt.get();
+            moodLog.setMood(moodLogRequest.getMood());
+            moodLog.setEmotions(moodLogRequest.getEmotions());
+            moodLog.setEnergyLevel(moodLogRequest.getEnergyLevel());
+            moodLog.setNote(moodLogRequest.getNote());
+            moodLog.setSleepHours(moodLogRequest.getSleepHours());
+            moodLog.setExerciseMinutes(moodLogRequest.getExerciseMinutes());
+            moodLog.setWaterIntakeMl(moodLogRequest.getWaterIntakeMl());
         } else {
             moodLog = MoodLog.builder()
-                    .id(UUID.randomUUID().toString())
-                    .userId(userId)
+                    .user(user)
                     .date(logDate)
-                    .mood(request.getMood())
-                    .emotions(request.getEmotions())
-                    .energyLevel(request.getEnergyLevel())
-                    .note(request.getNote())
-                    .sleepHours(request.getSleepHours())
-                    .exerciseMinutes(request.getExerciseMinutes())
-                    .waterIntakeMl(request.getWaterIntakeMl())
+                    .mood(moodLogRequest.getMood())
+                    .emotions(moodLogRequest.getEmotions())
+                    .energyLevel(moodLogRequest.getEnergyLevel())
+                    .note(moodLogRequest.getNote())
+                    .sleepHours(moodLogRequest.getSleepHours())
+                    .exerciseMinutes(moodLogRequest.getExerciseMinutes())
+                    .waterIntakeMl(moodLogRequest.getWaterIntakeMl())
                     .build();
-            InMemoryDatabase.moodLogs.add(moodLog);
         }
-        return ResponseEntity.ok(moodLog);
+
+        MoodLog savedLog = moodLogRepository.save(moodLog);
+        return ResponseEntity.ok(savedLog);
     }
 
     @GetMapping("/history")
     public ResponseEntity<List<MoodLog>> getMoodHistory(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
-        List<MoodLog> history;
-        if (!InMemoryDatabase.isDatabaseOffline) {
-            try {
-                history = moodLogRepository.findByUserId(user.getId());
-                history = new ArrayList<>(history); // Ensure mutable
-            } catch (Exception e) {
-                InMemoryDatabase.isDatabaseOffline = true;
-                history = InMemoryDatabase.moodLogs.stream()
-                        .filter(m -> m.getUserId().equals(user.getId()))
-                        .collect(Collectors.toList());
-            }
-        } else {
-            history = InMemoryDatabase.moodLogs.stream()
-                    .filter(m -> m.getUserId().equals(user.getId()))
-                    .collect(Collectors.toList());
-        }
+        List<MoodLog> history = moodLogRepository.findByUserId(user.getId());
+        history = new ArrayList<>(history); // Ensure mutable
         history.sort((a, b) -> b.getDate().compareTo(a.getDate())); // Newest first
         return ResponseEntity.ok(history);
     }
@@ -123,22 +65,7 @@ public class MoodController {
     @GetMapping("/stats")
     public ResponseEntity<?> getMoodStats(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
-        List<MoodLog> history;
-        
-        if (!InMemoryDatabase.isDatabaseOffline) {
-            try {
-                history = moodLogRepository.findByUserId(user.getId());
-            } catch (Exception e) {
-                InMemoryDatabase.isDatabaseOffline = true;
-                history = InMemoryDatabase.moodLogs.stream()
-                        .filter(m -> m.getUserId().equals(user.getId()))
-                        .collect(Collectors.toList());
-            }
-        } else {
-            history = InMemoryDatabase.moodLogs.stream()
-                    .filter(m -> m.getUserId().equals(user.getId()))
-                    .collect(Collectors.toList());
-        }
+        List<MoodLog> history = moodLogRepository.findByUserId(user.getId());
 
         // Count moods
         Map<String, Integer> moodCounts = new HashMap<>();

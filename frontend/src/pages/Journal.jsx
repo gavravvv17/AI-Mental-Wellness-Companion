@@ -34,7 +34,7 @@ const useTTS = () => {
   return { speak, stop, speaking, supported };
 };
 
-const Journal = () => {
+const Journal = ({ selectedJournalId, setSelectedJournalId }) => {
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
   const [historyList, setHistoryList] = useState([]);
@@ -83,23 +83,41 @@ const Journal = () => {
   };
   useEffect(() => { fetchHistory(); }, []);
 
+  // Handle viewing a specific journal entry passed from the timeline
+  useEffect(() => {
+    if (selectedJournalId && historyList.length > 0) {
+      const found = historyList.find(e => e.id === selectedJournalId);
+      if (found) {
+        setSelectedEntry(found);
+        setActiveTab('detail');
+        if (typeof setSelectedJournalId === 'function') {
+          setSelectedJournalId(null); // Reset it so switching tabs works normally
+        }
+      }
+    }
+  }, [selectedJournalId, historyList, setSelectedJournalId]);
+
   /* ── Submit entry ── */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!content.trim()) return;
     setLoading(true); setError('');
     try {
+      // Gemini AI analysis can take 20–45 s; override the default 15 s axios timeout.
       const r = await API.post('/journal', {
         title: title.trim() || 'Daily Reflection',
         content: content.trim(),
         date: new Date().toISOString().split('T')[0]
-      });
+      }, { timeout: 60000 });
       setSelectedEntry(r.data);
       setContent(''); setTitle('');
       fetchHistory(); setActiveTab('detail');
     } catch (err) {
-      if (err.response?.status !== 401)
-        setError('Could not save journal entry. Please try again.');
+      if (err.code === 'ECONNABORTED') {
+        setError('The AI analysis is taking longer than expected. Please try again in a moment.');
+      } else if (err.response?.status !== 401) {
+        setError('Save error: ' + (err.response?.data?.error || err.message));
+      }
     } finally { setLoading(false); }
   };
 
@@ -185,7 +203,7 @@ const Journal = () => {
                   <Sparkles className="w-7 h-7 absolute inset-0 m-auto animate-bounce-gentle" style={{ color: '#8b5cf6' }} />
                 </div>
                 <div className="text-center">
-                  <h3 className="font-bold text-ink-800">MindMate is reflecting…</h3>
+                  <h3 className="font-bold text-ink-800">Serenity is reflecting…</h3>
                   <p className="text-xs text-ink-400 mt-1">Analyzing sentiment, identifying themes, crafting prompts.</p>
                 </div>
               </div>
@@ -254,7 +272,7 @@ const Journal = () => {
             <div className="p-3 rounded-2xl" style={{ background: '#f0f8ff' }}>
               <p className="text-[10px] text-ink-500 leading-relaxed flex items-start gap-1.5">
                 <Volume2 className="w-3 h-3 text-sky-400 flex-shrink-0 mt-0.5" />
-                After saving, click <strong className="text-ink-700">Read Aloud</strong> on any entry to have MindMate narrate it back to you.
+                After saving, click <strong className="text-ink-700">Read Aloud</strong> on any entry to have Serenity narrate it back to you.
               </p>
             </div>
           </div>

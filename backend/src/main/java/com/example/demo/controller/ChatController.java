@@ -18,7 +18,7 @@ public class ChatController {
 
     public static class ChatRequest {
         private String message;
-        private List<Map<String, String>> history; // e.g. [{"role": "user", "text": "hello"}]
+        private List<Map<String, String>> history;
 
         public String getMessage() {
             return message;

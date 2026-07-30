@@ -186,10 +186,10 @@ const TrustedCircle = () => {
           <div className="card p-6 space-y-4" style={{ borderRadius:'24px' }}>
             <div className="flex items-center gap-2">
               <Heart className="w-4 h-4 fill-rose-400 text-rose-400" />
-              <h3 className="font-bold text-sm text-ink-800">MindMate Disclaimer</h3>
+              <h3 className="font-bold text-sm text-ink-800">Serenity Disclaimer</h3>
             </div>
             <p className="text-xs text-ink-500 leading-relaxed">
-              MindMate is a <strong className="text-ink-700">self-care companion</strong> for mood tracking and journaling — not a clinical tool. Always consult a licensed professional for mental health concerns.
+              Serenity is a <strong className="text-ink-700">self-care companion</strong> for mood tracking and journaling — not a clinical tool. Always consult a licensed professional for mental health concerns.
             </p>
 
             <div className="border-t border-warm-100 pt-4 space-y-3">
