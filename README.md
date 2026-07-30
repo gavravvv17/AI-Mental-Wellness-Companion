@@ -38,15 +38,47 @@
 
 ## 📸 Screenshots
 
-> _Screenshots coming soon. Run the project locally to explore the full interface._
+> Explore some of the key interfaces of **Serenity AI**.
 
-| Dashboard | Mood Tracker | AI Journal |
-|---|---|---|
-| _(screenshot)_ | _(screenshot)_ | _(screenshot)_ |
+### 🏠 Dashboard
 
-| Mindfulness | Chatbot | Life Timeline |
-|---|---|---|
-| _(screenshot)_ | _(screenshot)_ | _(screenshot)_ |
+![Dashboard](screenshots/dashboard.png)
+
+---
+
+### 😊 Mood Tracker
+
+![Mood Tracker](screenshots/mood.png)
+
+---
+
+### 📖 AI Journal
+
+![AI Journal](screenshots/journal.png)
+
+---
+
+### 📊 Wellness Analytics
+
+![Analytics](screenshots/analytics.png)
+
+---
+
+### 💬 AI Chatbot
+
+![AI Chatbot](screenshots/chatbot.png)
+
+---
+
+### 🕒 Life Timeline
+
+![Life Timeline](screenshots/life-timeline.png)
+
+---
+
+### 🧘 Mindfulness
+
+![Mindfulness](screenshots/mindfulness.png)
 
 ---
 
