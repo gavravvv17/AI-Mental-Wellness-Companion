@@ -55,6 +55,9 @@ public class CircleController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Autowired
+    private com.example.demo.service.EmailService emailService;
+
     @PostMapping("/alert")
     public ResponseEntity<?> sendCircleAlert(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
@@ -64,19 +67,26 @@ public class CircleController {
             return ResponseEntity.badRequest().body(new MessageResponse("You don't have any contacts in your Trusted Circle yet!"));
         }
 
-        // Simulate sending SMS/emails
-        StringBuilder result = new StringBuilder();
-        result.append("[SIMULATED ACTION] Alert broadcasted! Sent messages to: ");
-        for (int i = 0; i < contacts.size(); i++) {
-            result.append(contacts.get(i).getName());
-            if (i < contacts.size() - 1) {
-                result.append(", ");
-            }
-        }
-        result.append(". Message content: 'Hi, this is Serenity. User ")
-                .append(user.getFullName())
-                .append(" is having a difficult day and requested a quick check-in. Please reach out to them when you can.'");
+        int sentCount = 0;
+        List<String> sentContactNames = new java.util.ArrayList<>();
 
-        return ResponseEntity.ok(new MessageResponse(result.toString()));
+        try {
+            for (TrustedContact contact : contacts) {
+                if (contact.getEmail() != null && !contact.getEmail().isBlank()) {
+                    emailService.sendEmergencyAlertEmail(contact.getEmail().trim(), contact.getName(), user.getFullName());
+                    sentCount++;
+                    sentContactNames.add(contact.getName() + " (" + contact.getEmail() + ")");
+                }
+            }
+
+            if (sentCount == 0) {
+                return ResponseEntity.badRequest().body(new MessageResponse("None of your trusted contacts have valid email addresses!"));
+            }
+
+            String successMessage = "Emergency message successfully sent via email to: " + String.join(", ", sentContactNames);
+            return ResponseEntity.ok(new MessageResponse(successMessage));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Failed to send emergency message email: " + e.getMessage()));
+        }
     }
 }

@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import ForgotPassword from './pages/ForgotPassword';
 
 import Dashboard from './pages/Dashboard';
 import MoodTracker from './pages/MoodTracker';
@@ -15,13 +16,16 @@ import Chatbot from './pages/Chatbot';
 
 const AppContent = () => {
   const { user } = useAuth();
-  const [authView, setAuthView] = useState('login');
+  const [authView, setAuthView] = useState('login'); // 'login' | 'signup' | 'forgot-password'
   const [currentTab, setCurrentTab] = useState('dashboard');
 
   if (!user) {
-    return authView === 'login' 
-      ? <Login setAuthView={setAuthView} /> 
-      : <Signup setAuthView={setAuthView} />;
+    if (authView === 'signup') {
+      return <Signup setAuthView={setAuthView} />;
+    } else if (authView === 'forgot-password') {
+      return <ForgotPassword setAuthView={setAuthView} />;
+    }
+    return <Login setAuthView={setAuthView} />;
   }
 
   const renderContent = () => {

@@ -50,16 +50,78 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (username, email, password, fullName) => {
     try {
-      await API.post('/auth/signup', { username, email, password, fullName });
-      return { success: true };
+      const response = await API.post('/auth/signup', { username, email, password, fullName });
+      return { success: true, message: response.data?.message };
     } catch (error) {
       const message = error.response?.data?.message || 'Signup failed. Please try again.';
       return { success: false, error: message };
     }
   };
 
+  const verifyOtp = async (email, otp, type = 'EMAIL_VERIFICATION') => {
+    try {
+      const response = await API.post('/auth/verify-otp', { email, otp, type });
+      return { success: true, message: response.data?.message };
+    } catch (error) {
+      const message = error.response?.data?.message || 'Verification failed. Invalid OTP.';
+      return { success: false, error: message };
+    }
+  };
+
+  const resendOtp = async (email, type = 'EMAIL_VERIFICATION') => {
+    try {
+      const response = await API.post('/auth/resend-otp', { email, type });
+      return { success: true, message: response.data?.message };
+    } catch (error) {
+      const message = error.response?.data?.message || 'Failed to resend OTP. Please try again.';
+      return { success: false, error: message };
+    }
+  };
+
+  const forgotPassword = async (email) => {
+    try {
+      const response = await API.post('/auth/forgot-password', { email });
+      return { success: true, message: response.data?.message };
+    } catch (error) {
+      const message = error.response?.data?.message || 'Failed to request password reset.';
+      return { success: false, error: message };
+    }
+  };
+
+  const verifyResetOtp = async (email, otp) => {
+    try {
+      const response = await API.post('/auth/verify-reset-otp', { email, otp, type: 'PASSWORD_RESET' });
+      return { success: true, message: response.data?.message };
+    } catch (error) {
+      const message = error.response?.data?.message || 'Invalid reset code. Please check and try again.';
+      return { success: false, error: message };
+    }
+  };
+
+  const resetPassword = async (email, otp, newPassword) => {
+    try {
+      const response = await API.post('/auth/reset-password', { email, otp, newPassword });
+      return { success: true, message: response.data?.message };
+    } catch (error) {
+      const message = error.response?.data?.message || 'Failed to reset password. Please try again.';
+      return { success: false, error: message };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout, sessionExpired }}>
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      login,
+      signup,
+      verifyOtp,
+      resendOtp,
+      forgotPassword,
+      verifyResetOtp,
+      resetPassword,
+      logout,
+      sessionExpired
+    }}>
       {!loading && children}
     </AuthContext.Provider>
   );

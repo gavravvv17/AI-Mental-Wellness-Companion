@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Sprout, Lock, User, AlertCircle, Sparkles, Shield, HeartPulse, Zap, RefreshCw, Info } from 'lucide-react';
+import { Sprout, Lock, User, AlertCircle, Sparkles, Shield, HeartPulse, Zap, RefreshCw, Info, HelpCircle } from 'lucide-react';
 
 const Login = ({ setAuthView }) => {
   const { login, sessionExpired } = useAuth();
@@ -104,10 +104,21 @@ const Login = ({ setAuthView }) => {
             )}
 
             {error && (
-              <div className="mb-4 p-3.5 rounded-2xl border flex items-center gap-2.5"
+              <div className="mb-4 p-3.5 rounded-2xl border flex flex-col gap-2"
                 style={{ background: '#fff5f5', border: '1px solid #fecaca', color: '#dc2626' }}>
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <span className="text-xs">{error}</span>
+                <div className="flex items-center gap-2.5">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-xs">{error}</span>
+                </div>
+                {error.toLowerCase().includes('verify your email') && (
+                  <button
+                    type="button"
+                    onClick={() => setAuthView('signup')}
+                    className="self-start text-xs font-semibold underline text-purple-700 hover:text-purple-900 mt-1"
+                  >
+                    Complete Email Verification →
+                  </button>
+                )}
               </div>
             )}
 
@@ -115,24 +126,34 @@ const Login = ({ setAuthView }) => {
               style={{ background: '#f0f8ff', border: '1px solid #d8ecff' }}>
               <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-sky-400" />
               <p className="text-[10px] text-sky-700 leading-relaxed">
-                <strong>Default account:</strong> username <code className="bg-white/70 px-1 rounded">john</code> · password <code className="bg-white/70 px-1 rounded">password123</code><br />
+                <strong>Example account:</strong> username <code className="bg-white/70 px-1 rounded">johnsmith</code> · password <code className="bg-white/70 px-1 rounded">password123</code><br />
                 Or sign up to create your own account.
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-ink-600 mb-1.5">Username</label>
+                <label className="block text-xs font-semibold text-ink-600 mb-1.5">Username or Email</label>
                 <div className="relative">
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-300" />
                   <input type="text" required value={username} onChange={e => setUsername(e.target.value)}
-                    placeholder="Enter your username"
+                    placeholder="Enter your username or email"
                     className="w-full pl-10 pr-4 py-3 field text-ink-800 text-sm" />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-ink-600 mb-1.5">Password</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-semibold text-ink-600">Password</label>
+                  <button
+                    type="button"
+                    onClick={() => setAuthView('forgot-password')}
+                    className="text-xs font-medium hover:underline flex items-center gap-1"
+                    style={{ color: '#8b5cf6' }}
+                  >
+                    <HelpCircle className="w-3 h-3" /> Forgot Password?
+                  </button>
+                </div>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-300" />
                   <input type="password" required value={password} onChange={e => setPassword(e.target.value)}

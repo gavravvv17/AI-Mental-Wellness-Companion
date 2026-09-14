@@ -3,10 +3,12 @@ package com.example.demo;
 import com.example.demo.model.JournalEntry;
 import com.example.demo.model.LifeEvent;
 import com.example.demo.model.MoodLog;
+import com.example.demo.model.OtpToken;
 import com.example.demo.model.User;
 import com.example.demo.repository.JournalEntryRepository;
 import com.example.demo.repository.LifeEventRepository;
 import com.example.demo.repository.MoodLogRepository;
+import com.example.demo.repository.OtpTokenRepository;
 import com.example.demo.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -30,14 +32,29 @@ public class DemoApplication {
             MoodLogRepository moodLogRepository,
             JournalEntryRepository journalEntryRepository,
             LifeEventRepository lifeEventRepository,
+            OtpTokenRepository otpTokenRepository,
             PasswordEncoder encoder) {
         return args -> {
-            if (!userRepository.existsByUsername("john")) {
+            // Ensure pre-existing accounts are marked emailVerified = true so existing users can log in without issue
+            userRepository.findAll().forEach(u -> {
+                if (u.getEmailVerified() == null || Boolean.FALSE.equals(u.getEmailVerified())) {
+                    boolean hasPendingVerification = otpTokenRepository
+                            .findTopByEmailAndTypeAndUsedFalseOrderByCreatedAtDesc(u.getEmail(), OtpToken.OtpType.EMAIL_VERIFICATION)
+                            .isPresent();
+                    if (!hasPendingVerification) {
+                        u.setEmailVerified(true);
+                        userRepository.save(u);
+                    }
+                }
+            });
+
+            if (!userRepository.existsByUsername("johnsmith")) {
                 User defaultUser = User.builder()
-                        .username("john")
+                        .username("johnsmith")
                         .password(encoder.encode("password123"))
-                        .email("john@example.com")
-                        .fullName("John Doe")
+                        .email("johnsmith@example.com")
+                        .fullName("John Smith")
+                        .emailVerified(true)
                         .build();
                 defaultUser = userRepository.save(defaultUser);
 

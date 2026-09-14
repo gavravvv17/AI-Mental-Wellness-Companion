@@ -37,6 +37,14 @@ public class User implements UserDetails {
     @Column(name = "full_name")
     private String fullName;
 
+    @Column(name = "email_verified", nullable = false, columnDefinition = "boolean default true")
+    @Builder.Default
+    private Boolean emailVerified = true;
+
+    public Boolean getEmailVerified() {
+        return emailVerified == null || emailVerified;
+    }
+
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();

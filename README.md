@@ -260,13 +260,48 @@ npm run dev
 
 Open **http://localhost:5173** in your browser.
 
-**Default demo account** (created automatically on first run):
-- Username: `john`
+**Example demo account** (created automatically on first run):
+- Full Name: `John Smith`
+- Username: `johnsmith`
+- Email: `johnsmith@example.com`
 - Password: `password123`
 
 Or register a new account via the signup page.
 
 ---
+
+## 🔐 Enhanced Authentication System
+
+Serenity AI includes a secure, enterprise-ready authentication system built on Spring Security and JWT:
+
+### Key Authentication Features
+1. **Email Verification on Signup**:
+   - Every new registration receives a temporary 6-digit OTP sent via email.
+   - Accounts are created in an unverified state until the correct OTP is entered.
+   - OTP expiration (10 minutes), rate limiting (max 5 requests/hour), single-use invalidation, and 60-second resend cooldown.
+2. **Gmail SMTP Integration**:
+   - Configured via environment variables (`MAIL_USERNAME` and `MAIL_PASSWORD`).
+   - Uses Gmail App Passwords securely passed at runtime without committing secrets.
+3. **Forgot Password Flow**:
+   - Visible "Forgot Password?" option on the login page.
+   - 4-step wizard: Email entry ➔ OTP verification ➔ New password setup ➔ Success confirmation.
+4. **Unique Email Enforcement**:
+   - Enforced at both backend validation and PostgreSQL database `UNIQUE` constraint levels.
+   - Graceful handling of duplicate registrations with clear user-friendly guidance.
+5. **Database Preservation & Non-Destructive Migrations**:
+   - Existing users retain full access (`emailVerified` defaults to `true`).
+   - Historical mood logs, journal entries, habits, timeline events, and trusted contacts remain completely intact.
+
+### 📧 Gmail App Password Setup Guide
+To enable real email sending via Gmail SMTP:
+1. Enable **2-Step Verification** in your Google Account (`Google Account > Security > 2-Step Verification`).
+2. Generate an **App Password** (`Google Account > Security > App Passwords`). Select app name "Serenity AI".
+3. Set your environment variables before launching the backend:
+   ```bash
+   export MAIL_USERNAME="your-email@gmail.com"
+   export MAIL_PASSWORD="your-16-character-app-password"
+   ```
+4. If `MAIL_USERNAME` and `MAIL_PASSWORD` are not provided, Serenity AI operates in dev mode and logs the temporary OTP to the backend console.
 
 ## 📁 Folder Structure (Quick Reference)
 

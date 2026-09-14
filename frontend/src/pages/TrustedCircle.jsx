@@ -36,14 +36,24 @@ const TrustedCircle = () => {
     if (!window.confirm('Remove this contact from your Trusted Circle?')) return;
     try { await API.delete(`/circle/contact/${id}`); fetchContacts(); }
     catch (err) { console.error(err); }
-  };
+  };  const [alertError, setAlertError] = useState(null);
+  const [sendingAlert, setSendingAlert] = useState(false);
 
   const triggerAlert = async () => {
+    setAlertSuccess(null);
+    setAlertError(null);
+    setSendingAlert(true);
     try {
       const r = await API.post('/circle/alert');
       setAlertSuccess(r.data.message);
       setTimeout(() => setAlertSuccess(null), 8000);
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      const message = err.response?.data?.message || 'Failed to send emergency support email. Please try again.';
+      setAlertError(message);
+      setTimeout(() => setAlertError(null), 8000);
+    } finally {
+      setSendingAlert(false);
+    }
   };
 
   const avatarColors = [
@@ -71,10 +81,12 @@ const TrustedCircle = () => {
           <p className="text-sm text-ink-400 mt-1">Build your safety net of people you trust.</p>
         </div>
         {contacts.length > 0 && (
-          <button onClick={triggerAlert}
-            className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-white transition-all hover:shadow-lg"
+          <button onClick={triggerAlert} disabled={sendingAlert}
+            className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-white transition-all hover:shadow-lg disabled:opacity-50"
             style={{ background:'linear-gradient(135deg,#f97316,#ef4444)', boxShadow:'0 4px 14px rgba(249,115,22,0.25)' }}>
-            <Send className="w-4 h-4" /> Send Support Alert
+            {sendingAlert
+              ? <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+              : <><Send className="w-4 h-4" /> Send Emergency Email Alert</>}
           </button>
         )}
       </div>
@@ -85,10 +97,21 @@ const TrustedCircle = () => {
           style={{ background:'#f0faf0', border:'1.5px solid #a8d9ab' }}>
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4" style={{ color:'#388e3c' }} />
-            <span className="text-xs font-bold uppercase tracking-widest" style={{ color:'#388e3c' }}>Alert Simulated</span>
+            <span className="text-xs font-bold uppercase tracking-widest" style={{ color:'#388e3c' }}>Emergency Email Sent</span>
           </div>
           <p className="text-sm text-ink-700 font-medium">{alertSuccess}</p>
-          <p className="text-[10px] text-ink-400">In production, this sends SMS (Twilio) or email (SendGrid) to all contacts.</p>
+        </div>
+      )}
+
+      {/* Broadcast error */}
+      {alertError && (
+        <div className="p-5 rounded-2xl animate-scale-in space-y-1"
+          style={{ background:'#fff5f5', border:'1.5px solid #fecaca' }}>
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-rose-500" />
+            <span className="text-xs font-bold uppercase tracking-widest text-rose-500">Emergency Alert Delivery Failed</span>
+          </div>
+          <p className="text-sm text-rose-700 font-medium">{alertError}</p>
         </div>
       )}
 
