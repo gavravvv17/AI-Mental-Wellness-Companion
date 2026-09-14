@@ -21,10 +21,10 @@ public class MailConfig {
     @Value("${spring.mail.port:587}")
     private int port;
 
-    @Value("${spring.mail.username:teamserenityai@gmail.com}")
+    @Value("${spring.mail.username}")
     private String username;
 
-    @Value("${spring.mail.password:sotfvslattrczdpo}")
+    @Value("${spring.mail.password}")
     private String password;
 
     @Bean
