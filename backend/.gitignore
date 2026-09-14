@@ -39,3 +39,5 @@ src/main/resources/application-*.properties
 .env
 .env.*
 
+# Local SMTP diagnostic test
+backend/src/test/java/com/example/demo/SmtpDiagnosticTest.java
