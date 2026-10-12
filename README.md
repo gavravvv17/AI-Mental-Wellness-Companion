@@ -70,12 +70,6 @@
 
 ---
 
-### 🕒 Life Timeline
-
-![Life Timeline](frontend/screenshots/life-timeline.png)
-
----
-
 ### 🧘 Mindfulness
 
 ![Mindfulness](frontend/screenshots/mindfulness.png)
