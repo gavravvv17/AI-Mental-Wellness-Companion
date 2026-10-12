@@ -42,43 +42,43 @@
 
 ### 🏠 Dashboard
 
-![Dashboard](screenshots/dashboard.png)
+![Dashboard](frontend/screenshots/dashboard.png)
 
 ---
 
 ### 😊 Mood Tracker
 
-![Mood Tracker](screenshots/mood.png)
+![Mood Tracker](frontend/screenshots/mood.png)
 
 ---
 
 ### 📖 AI Journal
 
-![AI Journal](screenshots/journal.png)
+![AI Journal](frontend/screenshots/journal.png)
 
 ---
 
 ### 📊 Wellness Analytics
 
-![Analytics](screenshots/analytics.png)
+![Analytics](frontend/screenshots/analytics.png)
 
 ---
 
 ### 💬 AI Chatbot
 
-![AI Chatbot](screenshots/chatbot.png)
+![AI Chatbot](frontend/screenshots/chatbot.png)
 
 ---
 
 ### 🕒 Life Timeline
 
-![Life Timeline](screenshots/life-timeline.png)
+![Life Timeline](frontend/screenshots/life-timeline.png)
 
 ---
 
 ### 🧘 Mindfulness
 
-![Mindfulness](screenshots/mindfulness.png)
+![Mindfulness](frontend/screenshots/mindfulness.png)
 
 ---
 
